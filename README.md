@@ -2,7 +2,7 @@
 
 [![GitHub stats](https://github-readme-stats.vercel.app/api?username=inpercima&show_icons=true&theme=radical)](https://github.com/anuraghazra/github-readme-stats)
 
-[![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=inpercima?theme=radical)](https://github.com/anuraghazra/github-readme-stats)
+[![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=inpercima&layout=compact&theme=radical)](https://github.com/anuraghazra/github-readme-stats)
 
 <!--
 **inpercima/inpercima** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
