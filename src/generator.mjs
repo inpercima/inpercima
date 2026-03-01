@@ -1,5 +1,6 @@
 /**
  * HTML/CSS/JS dashboard generator.
+ * Styling uses Tailwind CSS (CDN) utility classes.
  */
 
 /**
@@ -29,7 +30,7 @@ function healthBadge(score) {
   else if (score >= 25) color = "#f97316";  // orange
   else color = "#ef4444";                    // red
 
-  return `<span class="health-badge" style="background:${color}20;color:${color};border:1px solid ${color}40">${score}</span>`;
+  return `<span class="inline-block rounded px-2 py-0.5 text-xs font-semibold" style="background:${color}20;color:${color};border:1px solid ${color}40">${score}</span>`;
 }
 
 /**
@@ -40,27 +41,32 @@ function healthBadge(score) {
  */
 function renderRow(repo, meta) {
   const topics = (repo.topics || [])
-    .map(t => `<span class="tag">${esc(t)}</span>`)
+    .map(t => `<span class="inline-block bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded px-1.5 py-0.5 text-xs mb-0.5">${esc(t)}</span>`)
     .join(" ");
 
-  const languages = repo.language ? `<span class="lang-chip">${esc(repo.language)}</span>` : "–";
+  const language = repo.language
+    ? `<span class="inline-block bg-slate-700 border border-slate-600 rounded px-2 py-0.5 text-xs">${esc(repo.language)}</span>`
+    : "–";
+
+  const tdBase = "py-3 px-4 align-top border-t border-slate-700 group-hover:bg-slate-800/50";
 
   const cells = [
-    `<td class="repo-name"><a href="${esc(repo.html_url)}" target="_blank" rel="noopener noreferrer">${esc(repo.name)}</a>
-      ${repo.description ? `<div class="repo-desc">${esc(repo.description)}</div>` : ""}
-    </td>`,
-    `<td>${languages}</td>`,
-    `<td>${repo.stargazers_count}</td>`,
-    `<td class="topics-cell">${topics || "–"}</td>`,
-    `<td>${meta.angular ? esc(meta.angular) : "–"}</td>`,
-    `<td>${meta.mavenVersion ? esc(meta.mavenVersion) : "–"}</td>`,
-    `<td>${meta.nodeVersion ? esc(meta.nodeVersion) : "–"}</td>`,
-    `<td>${meta.pnpmVersion ? esc(meta.pnpmVersion) : "–"}</td>`,
-    `<td>${meta.javaFramework ? esc(meta.javaFramework) : "–"}</td>`,
-    `<td class="health-cell">${healthBadge(meta.healthScore)}</td>`,
+    `<td class="${tdBase}">
+       <a href="${esc(repo.html_url)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-blue-400 hover:underline">${esc(repo.name)}</a>
+       ${repo.description ? `<div class="text-xs text-slate-400 mt-0.5 max-w-xs hidden sm:block">${esc(repo.description)}</div>` : ""}
+     </td>`,
+    `<td class="${tdBase}">${language}</td>`,
+    `<td class="${tdBase}">${repo.stargazers_count}</td>`,
+    `<td class="${tdBase}">${topics || "–"}</td>`,
+    `<td class="${tdBase}">${meta.angular ? esc(meta.angular) : "–"}</td>`,
+    `<td class="${tdBase}">${meta.mavenVersion ? esc(meta.mavenVersion) : "–"}</td>`,
+    `<td class="${tdBase}">${meta.nodeVersion ? esc(meta.nodeVersion) : "–"}</td>`,
+    `<td class="${tdBase}">${meta.pnpmVersion ? esc(meta.pnpmVersion) : "–"}</td>`,
+    `<td class="${tdBase}">${meta.javaFramework ? esc(meta.javaFramework) : "–"}</td>`,
+    `<td class="${tdBase}">${healthBadge(meta.healthScore)}</td>`,
   ];
 
-  return `<tr data-topics="${esc((repo.topics || []).join(","))}" data-name="${esc(repo.name)}">${cells.join("")}</tr>`;
+  return `<tr class="group" data-topics="${esc((repo.topics || []).join(","))}" data-name="${esc(repo.name)}">${cells.join("")}</tr>`;
 }
 
 /**
@@ -72,35 +78,40 @@ function renderKpis(stats) {
   const langBars = stats.topLanguages.map(({ lang, count }) => {
     const pct = stats.totalRepos > 0 ? Math.round((count / stats.totalRepos) * 100) : 0;
     return `
-      <div class="lang-row">
-        <span class="lang-label">${esc(lang)}</span>
-        <div class="lang-bar-track">
-          <div class="lang-bar-fill" style="width:${pct}%"></div>
+      <div class="flex items-center gap-2 mb-1.5">
+        <span class="w-20 text-xs">${esc(lang)}</span>
+        <div class="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style="width:${pct}%"></div>
         </div>
-        <span class="lang-count">${count}</span>
+        <span class="text-xs text-slate-400 w-6 text-right">${count}</span>
       </div>`;
   }).join("");
 
+  const cardClass = "bg-slate-800 border border-slate-700 rounded-xl p-5";
+
   return `
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-value">${stats.totalRepos}</div>
-        <div class="kpi-label">Repositories</div>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="${cardClass}">
+        <div class="text-4xl font-bold leading-none mb-1">${stats.totalRepos}</div>
+        <div class="text-xs uppercase tracking-wider text-slate-400">Repositories</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-value">${stats.totalStars}</div>
-        <div class="kpi-label">Total Stars</div>
+      <div class="${cardClass}">
+        <div class="text-4xl font-bold leading-none mb-1">${stats.totalStars}</div>
+        <div class="text-xs uppercase tracking-wider text-slate-400">Total Stars</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-value">${stats.avgHealth}<span class="kpi-unit">/100</span></div>
-        <div class="kpi-label">Avg. Health Score</div>
+      <div class="${cardClass}">
+        <div class="text-4xl font-bold leading-none mb-1">${stats.avgHealth}<span class="text-base font-normal text-slate-400">/100</span></div>
+        <div class="text-xs uppercase tracking-wider text-slate-400">Avg. Health Score</div>
       </div>
-      <div class="kpi-card kpi-langs">
-        <div class="kpi-label kpi-langs-title">Top Languages</div>
+      <div class="${cardClass}">
+        <div class="text-xs uppercase tracking-wider text-slate-400 mb-3">Top Languages</div>
         ${langBars}
       </div>
     </div>`;
 }
+
+const TH_BASE = "py-3 px-4 text-left text-xs uppercase tracking-wider text-slate-400 whitespace-nowrap cursor-pointer select-none hover:text-slate-200 transition-colors";
+const TH_SORTED = "py-3 px-4 text-left text-xs uppercase tracking-wider text-blue-400 whitespace-nowrap cursor-pointer select-none hover:text-blue-300 transition-colors";
 
 /**
  * Generate the full standalone HTML dashboard.
@@ -118,201 +129,61 @@ export function generateDashboard(analyzed, stats, generatedAt) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inpercima – Developer Dashboard</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #0f172a;
-      --surface: #1e293b;
-      --surface2: #263349;
-      --border: #334155;
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --accent: #3b82f6;
-      --accent2: #6366f1;
-      --green: #22c55e;
-      --amber: #f59e0b;
-    }
-
-    @media (prefers-color-scheme: light) {
-      :root {
-        --bg: #f1f5f9;
-        --surface: #ffffff;
-        --surface2: #f8fafc;
-        --border: #e2e8f0;
-        --text: #0f172a;
-        --muted: #64748b;
-      }
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      font-size: 14px;
-    }
-
-    .container { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
-
-    header { margin-bottom: 2rem; }
-    header h1 { font-size: 2rem; font-weight: 700; margin-bottom: .25rem; }
-    header p { color: var(--muted); font-size: .875rem; }
-
-    /* KPI Grid */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .kpi-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: .75rem;
-      padding: 1.25rem 1.5rem;
-    }
-
-    .kpi-value { font-size: 2rem; font-weight: 700; line-height: 1; margin-bottom: .25rem; }
-    .kpi-unit { font-size: 1rem; font-weight: 400; color: var(--muted); }
-    .kpi-label { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
-    .kpi-langs-title { margin-bottom: .75rem; }
-
-    .lang-row { display: flex; align-items: center; gap: .5rem; margin-bottom: .4rem; }
-    .lang-label { width: 80px; font-size: .8rem; }
-    .lang-bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
-    .lang-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 99px; }
-    .lang-count { font-size: .75rem; color: var(--muted); width: 24px; text-align: right; }
-
-    /* Filters */
-    .filters { display: flex; gap: .75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
-    .filter-input {
-      flex: 1;
-      min-width: 200px;
-      max-width: 400px;
-      padding: .5rem .75rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: .5rem;
-      color: var(--text);
-      font-size: .875rem;
-      outline: none;
-      transition: border-color .15s;
-    }
-    .filter-input:focus { border-color: var(--accent); }
-
-    /* Table */
-    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: .75rem; }
-
-    table { width: 100%; border-collapse: collapse; }
-    thead { background: var(--surface2); }
-    th {
-      padding: .75rem 1rem;
-      text-align: left;
-      font-size: .75rem;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      color: var(--muted);
-      white-space: nowrap;
-      cursor: pointer;
-      user-select: none;
-    }
-    th:hover { color: var(--text); }
-    th.sorted { color: var(--accent); }
-    th .sort-arrow { margin-left: .25rem; opacity: .6; }
-
-    td { padding: .75rem 1rem; border-top: 1px solid var(--border); vertical-align: top; }
-    tr:hover td { background: var(--surface2); }
-
-    .repo-name a { font-weight: 600; color: var(--accent); text-decoration: none; }
-    .repo-name a:hover { text-decoration: underline; }
-    .repo-desc { font-size: .8rem; color: var(--muted); margin-top: .2rem; max-width: 28ch; }
-
-    .tag {
-      display: inline-block;
-      background: rgba(59,130,246,.15);
-      color: #60a5fa;
-      border: 1px solid rgba(59,130,246,.25);
-      border-radius: .375rem;
-      padding: .1rem .4rem;
-      font-size: .7rem;
-      margin-bottom: .2rem;
-    }
-
-    .lang-chip {
-      display: inline-block;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: .375rem;
-      padding: .1rem .5rem;
-      font-size: .75rem;
-    }
-
-    .health-badge {
-      display: inline-block;
-      border-radius: .375rem;
-      padding: .2rem .6rem;
-      font-size: .75rem;
-      font-weight: 600;
-    }
-
-    .no-results { text-align: center; padding: 3rem; color: var(--muted); }
-
-    footer { margin-top: 2rem; text-align: center; font-size: .75rem; color: var(--muted); }
-
-    @media (max-width: 768px) {
-      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-      .repo-desc { display: none; }
-    }
-  </style>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <script>
+    tailwind.config = { darkMode: 'media' }
+  <\/script>
 </head>
-<body>
-<div class="container">
+<body class="bg-slate-950 text-slate-200 min-h-screen text-sm">
+<div class="max-w-screen-2xl mx-auto px-6 py-12">
 
-  <header>
-    <h1>Inpercima</h1>
-    <p>Developer Dashboard &mdash; Auto-generated from GitHub API &middot; ${esc(generatedAt)}</p>
+  <header class="mb-8">
+    <h1 class="text-4xl font-bold mb-1">Inpercima</h1>
+    <p class="text-slate-400 text-sm">Developer Dashboard &mdash; Auto-generated from GitHub API &middot; ${esc(generatedAt)}</p>
   </header>
 
   ${renderKpis(stats)}
 
-  <div class="filters">
-    <input id="searchInput" class="filter-input" type="text" placeholder="Filter by name or topic…" aria-label="Filter repositories" />
+  <div class="flex gap-3 mb-5 flex-wrap">
+    <input id="searchInput" type="text" placeholder="Filter by name or topic…" aria-label="Filter repositories"
+      class="flex-1 min-w-[200px] max-w-sm px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 transition-colors" />
   </div>
 
-  <div class="table-wrap">
-    <table id="repoTable">
-      <thead>
+  <div class="overflow-x-auto border border-slate-700 rounded-xl">
+    <table class="w-full border-collapse">
+      <thead class="bg-slate-800/50">
         <tr>
-          <th data-col="0">Repository</th>
-          <th data-col="1">Language</th>
-          <th data-col="2" class="sorted">Stars ▼</th>
-          <th data-col="3">Topics</th>
-          <th data-col="4">Angular</th>
-          <th data-col="5">Maven</th>
-          <th data-col="6">Node.js</th>
-          <th data-col="7">pnpm</th>
-          <th data-col="8">Java FW</th>
-          <th data-col="9">Health</th>
+          <th class="${TH_BASE}" data-col="0">Repository</th>
+          <th class="${TH_BASE}" data-col="1">Language</th>
+          <th class="${TH_SORTED}" data-col="2">Stars ▼</th>
+          <th class="${TH_BASE}" data-col="3">Topics</th>
+          <th class="${TH_BASE}" data-col="4">Angular</th>
+          <th class="${TH_BASE}" data-col="5">Maven</th>
+          <th class="${TH_BASE}" data-col="6">Node.js</th>
+          <th class="${TH_BASE}" data-col="7">pnpm</th>
+          <th class="${TH_BASE}" data-col="8">Java FW</th>
+          <th class="${TH_BASE}" data-col="9">Health</th>
         </tr>
       </thead>
       <tbody id="repoBody">
         ${rows}
       </tbody>
     </table>
-    <div id="noResults" class="no-results" style="display:none">No repositories match your filter.</div>
+    <div id="noResults" class="text-center py-12 text-slate-400" style="display:none">No repositories match your filter.</div>
   </div>
 
-  <footer>
+  <footer class="mt-8 text-center text-xs text-slate-400">
     Generated on ${esc(generatedAt)} &middot;
-    <a href="https://github.com/inpercima" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">github.com/inpercima</a>
+    <a href="https://github.com/inpercima" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline">github.com/inpercima</a>
   </footer>
 
 </div>
 
 <script>
 (function() {
+  const TH_BASE = "${TH_BASE}";
+  const TH_SORTED = "${TH_SORTED}";
+
   const searchInput = document.getElementById("searchInput");
   const tbody = document.getElementById("repoBody");
   const noResults = document.getElementById("noResults");
@@ -363,11 +234,10 @@ export function generateDashboard(analyzed, stats, generatedAt) {
         sortAsc = col !== 2; // stars default desc
       }
       headers.forEach(h => {
-        h.classList.remove("sorted");
-        // Remove trailing arrow from label
+        h.className = TH_BASE;
         h.textContent = h.textContent.replace(/ [▲▼]$/, "");
       });
-      th.classList.add("sorted");
+      th.className = TH_SORTED;
       th.textContent = th.textContent.replace(/ [▲▼]$/, "") + (sortAsc ? " ▲" : " ▼");
       sortRows();
     });
@@ -378,7 +248,7 @@ export function generateDashboard(analyzed, stats, generatedAt) {
   // Initial sort
   sortRows();
 })();
-</script>
+<\/script>
 </body>
 </html>`;
 }
