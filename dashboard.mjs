@@ -24,7 +24,7 @@ const TOKEN = process.env.GITHUB_TOKEN;
 async function main() {
   console.log(`Fetching repositories for ${USERNAME}…`);
   const repos = await fetchRepos(USERNAME, TOKEN);
-  console.log(`Found ${repos.length} public repositories.`);
+  console.log(`Found ${repos.length} public, non-fork repositories.`);
 
   console.log("Analyzing repositories (fetching config files)…");
   const analysisResults = await Promise.all(

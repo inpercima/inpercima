@@ -40,6 +40,7 @@ export async function fetchRepos(username, token) {
     const data = await res.json();
     if (!Array.isArray(data) || data.length === 0) break;
 
+    // Only include non-fork repositories
     repos.push(...data.filter(r => !r.fork));
     if (data.length < 100) break;
     page++;
