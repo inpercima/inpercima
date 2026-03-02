@@ -14,11 +14,12 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fetchRepos } from "./src/api.mjs";
 import { analyzeRepo, aggregateStats } from "./src/analyzer.mjs";
-import { generateDashboard } from "./src/generator.mjs";
+import { generateDashboard, generateReadme } from "./src/generator.mjs";
 
 const USERNAME = "inpercima";
 const OUT_DIR = "dist";
 const OUT_FILE = join(OUT_DIR, "index.html");
+const README_FILE = "README.md";
 const TOKEN = process.env.GITHUB_TOKEN;
 
 async function main() {
@@ -39,11 +40,14 @@ async function main() {
 
   console.log(`Generating dashboard…`);
   const html = generateDashboard(analysisResults, stats, generatedAt);
+  const readme = generateReadme(analysisResults, stats, generatedAt);
 
   await mkdir(OUT_DIR, { recursive: true });
   await writeFile(OUT_FILE, html, "utf-8");
+  await writeFile(README_FILE, readme, "utf-8");
 
   console.log(`Dashboard written to ${OUT_FILE}`);
+  console.log(`README written to ${README_FILE}`);
   console.log(`Stats: ${stats.totalRepos} repos, ${stats.totalStars} stars, avg health ${stats.avgHealth}/100`);
 }
 

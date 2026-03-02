@@ -114,6 +114,80 @@ const TH_BASE = "py-3 px-4 text-left text-xs uppercase tracking-wider text-slate
 const TH_SORTED = "py-3 px-4 text-left text-xs uppercase tracking-wider text-blue-400 whitespace-nowrap cursor-pointer select-none hover:text-blue-300 transition-colors";
 
 /**
+ * Format a health score as an emoji + number string.
+ * @param {number} score 0-100
+ * @returns {string}
+ */
+function formatHealthScore(score) {
+  if (score >= 75) return `🟢 ${score}`;
+  if (score >= 50) return `🟡 ${score}`;
+  return `🔴 ${score}`;
+}
+
+/**
+ * Generate the README.md content with KPI info and top 5 repos by health score.
+ * @param {Array<{repo: object, meta: object}>} analyzed
+ * @param {object} stats  Aggregated KPI stats
+ * @param {string} generatedAt  ISO date string
+ * @returns {string}
+ */
+export function generateReadme(analyzed, stats, generatedAt) {
+  const top5 = [...analyzed]
+    .sort((a, b) => b.meta.healthScore - a.meta.healthScore)
+    .slice(0, 5);
+
+  const langTable = stats.topLanguages
+    .map(({ lang, count }) => {
+      const pct = stats.totalRepos > 0 ? Math.round((count / stats.totalRepos) * 100) : 0;
+      const filled = Math.min(20, Math.round(pct / 5));
+      return `| ${lang} | ${count} | ${"█".repeat(filled)}${"░".repeat(20 - filled)} ${pct}% |`;
+    })
+    .join("\n");
+
+  const top5Rows = top5
+    .map(({ repo, meta }) => {
+      const health = formatHealthScore(meta.healthScore);
+      const lang = repo.language || "–";
+      const stars = repo.stargazers_count;
+      return `| [${repo.name}](${repo.html_url}) | ${lang} | ⭐ ${stars} | ${health} |`;
+    })
+    .join("\n");
+
+  return `### Hi there 👋
+
+[![GitHub stats](https://github-readme-stats.vercel.app/api?username=inpercima&show_icons=true&theme=radical)](https://github.com/anuraghazra/github-readme-stats)
+
+[![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=inpercima&layout=compact&theme=radical)](https://github.com/anuraghazra/github-readme-stats)
+
+---
+
+## 📊 Developer Dashboard
+
+> 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **${generatedAt}**
+>
+> 🔗 [View Full Dashboard](https://inpercima.github.io/inpercima)
+
+### 🔢 KPIs
+
+| 🗂️ Repositories | ⭐ Total Stars | 💚 Avg. Health Score |
+| :-: | :-: | :-: |
+| **${stats.totalRepos}** | **${stats.totalStars}** | **${stats.avgHealth} / 100** |
+
+### 🌐 Top Languages
+
+| Language | Repos | Distribution |
+| -------- | :---: | ------------ |
+${langTable}
+
+### 🏆 Top 5 by Health Score
+
+| Repository | Language | Stars | Health |
+| ---------- | -------- | :---: | :----: |
+${top5Rows}
+`;
+}
+
+/**
  * Generate the full standalone HTML dashboard.
  * @param {Array<{repo: object, meta: object}>} analyzed  Sorted list of repos + meta
  * @param {object} stats  Aggregated KPI stats
