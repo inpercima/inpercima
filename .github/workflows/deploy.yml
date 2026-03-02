@@ -13,14 +13,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [24.14]
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Node.js with ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: ${{ matrix.node-version }}
 
       - name: Generate dashboard
         run: node dashboard.mjs

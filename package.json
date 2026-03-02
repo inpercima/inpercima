@@ -8,6 +8,6 @@
     "build": "node dashboard.mjs"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=24.14.0"
   }
 }
