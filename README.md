@@ -1,24 +1,16 @@
-### Hi there 👋
-
-[![GitHub stats](https://github-readme-stats.vercel.app/api?username=inpercima&show_icons=true&theme=radical)](https://github.com/anuraghazra/github-readme-stats)
-
-[![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=inpercima&layout=compact&theme=radical)](https://github.com/anuraghazra/github-readme-stats)
-
----
-
-## 📊 Developer Dashboard
+# 📊 Developer Dashboard
 
 > 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **2026-03-02**
 >
 > 🔗 [View Full Dashboard](https://inpercima.github.io/inpercima)
 
-### 🔢 KPIs
+## 🔢 KPIs
 
 | 🗂️ Repositories | ⭐ Total Stars | 💚 Avg. Health Score |
 | :-: | :-: | :-: |
 | **23** | **18** | **62 / 100** |
 
-### 🌐 Top Languages
+## 🌐 Top Languages
 
 | Language | Repos | Distribution |
 | -------- | :---: | ------------ |
@@ -28,7 +20,7 @@
 | Dockerfile | 1 | █░░░░░░░░░░░░░░░░░░░ 4% |
 | HTML | 1 | █░░░░░░░░░░░░░░░░░░░ 4% |
 
-### 🏆 Top 5 by Health Score
+## 🏆 Top 5 repositories by Health Score
 
 | Repository | Language | Stars | Health |
 | ---------- | -------- | :---: | :----: |
