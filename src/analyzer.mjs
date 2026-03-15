@@ -37,6 +37,19 @@ function detectPnpmVersion(pkg) {
 }
 
 /**
+ * Extract Maven version from .mvn/wrapper/maven-wrapper.properties content.
+ * Searches for a line like:
+ *   distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.3/apache-maven-3.9.3-bin.zip
+ * @param {string} wrapperProps
+ * @returns {string|null}
+ */
+function detectMavenVersionFromWrapper(wrapperProps) {
+  const match = wrapperProps.match(/distributionUrl=[^\r\n]*apache-maven-([\d.]+)-bin/);
+  if (match) return match[1].trim();
+  return null;
+}
+
+/**
  * Extract Maven version from pom.xml content.
  * @param {string} pomXml
  * @returns {string|null}
@@ -44,8 +57,6 @@ function detectPnpmVersion(pkg) {
 function detectMavenVersion(pomXml) {
   const match = pomXml.match(/<maven\.version>(.*?)<\/maven\.version>/);
   if (match) return match[1].trim();
-  const wrapperMatch = pomXml.match(/<distributionUrl>[^<]*apache-maven-([\d.]+)-bin/);
-  if (wrapperMatch) return wrapperMatch[1].trim();
   return null;
 }
 
@@ -119,9 +130,10 @@ export async function analyzeRepo(username, repo, token) {
   };
 
   // Fetch files in parallel where possible
-  const [packageJson, pomXml, readmeText, ciYml, ciYaml] = await Promise.all([
+  const [packageJson, pomXml, mavenWrapperProps, readmeText, ciYml, ciYaml] = await Promise.all([
     fetchFileContent(username, name, "package.json", token),
     fetchFileContent(username, name, "pom.xml", token),
+    fetchFileContent(username, name, ".mvn/wrapper/maven-wrapper.properties", token),
     fetchFileContent(username, name, "README.md", token),
     fetchFileContent(username, name, ".github/workflows/ci.yml", token),
     fetchFileContent(username, name, ".github/workflows/ci.yaml", token),
@@ -141,8 +153,15 @@ export async function analyzeRepo(username, repo, token) {
     }
   }
 
+  if (mavenWrapperProps) {
+    const wrapperVersion = detectMavenVersionFromWrapper(mavenWrapperProps);
+    if (wrapperVersion) meta.mavenVersion = wrapperVersion;
+  }
+
   if (pomXml) {
-    meta.mavenVersion = detectMavenVersion(pomXml);
+    if (!meta.mavenVersion) {
+      meta.mavenVersion = detectMavenVersion(pomXml);
+    }
     meta.javaFramework = detectJavaFramework(pomXml);
   }
 
