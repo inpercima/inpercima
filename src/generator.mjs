@@ -28,7 +28,7 @@ function healthBadge(score) {
   if (score >= 75) color = "#22c55e";       // green
   else if (score >= 50) color = "#f59e0b";  // amber
   else if (score >= 25) color = "#f97316";  // orange
-  else color = "#ef4444";                    // red
+  else color = "#ef4444";                   // red
 
   return `<span class="inline-block rounded px-2 py-0.5 text-xs font-semibold" style="background:${color}20;color:${color};border:1px solid ${color}40">${score}</span>`;
 }
@@ -153,33 +153,25 @@ export function generateReadme(analyzed, stats, generatedAt) {
     })
     .join("\n");
 
-  return `### Hi there 👋
-
-[![GitHub stats](https://github-readme-stats.vercel.app/api?username=inpercima&show_icons=true&theme=radical)](https://github.com/anuraghazra/github-readme-stats)
-
-[![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=inpercima&layout=compact&theme=radical)](https://github.com/anuraghazra/github-readme-stats)
-
----
-
-## 📊 Developer Dashboard
+  return `# 📊 Developer Dashboard
 
 > 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **${generatedAt}**
 >
 > 🔗 [View Full Dashboard](https://inpercima.github.io/inpercima)
 
-### 🔢 KPIs
+## 🔢 KPIs
 
 | 🗂️ Repositories | ⭐ Total Stars | 💚 Avg. Health Score |
 | :-: | :-: | :-: |
 | **${stats.totalRepos}** | **${stats.totalStars}** | **${stats.avgHealth} / 100** |
 
-### 🌐 Top Languages
+## 🌐 Top Languages
 
 | Language | Repos | Distribution |
 | -------- | :---: | ------------ |
 ${langTable}
 
-### 🏆 Top 5 by Health Score
+## 🏆 Top 5 by Health Score
 
 | Repository | Language | Stars | Health |
 | ---------- | -------- | :---: | :----: |
