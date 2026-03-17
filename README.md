@@ -8,7 +8,7 @@
 
 | 🗂️ Repositories | ⭐ Total Stars | 💚 Avg. Health Score |
 | :-: | :-: | :-: |
-| **23** | **18** | **61 / 100** |
+| **23** | **18** | **60 / 100** |
 
 ## 🌐 Top Languages
 
@@ -24,8 +24,8 @@
 
 | Repository | Language | Stars | Health |
 | ---------- | -------- | :---: | :----: |
-| [server-connector](https://github.com/inpercima/server-connector) | Java | ⭐ 2 | 🟢 82 |
-| [light-js](https://github.com/inpercima/light-js) | JavaScript | ⭐ 0 | 🟢 80 |
+| [mittagstisch](https://github.com/inpercima/mittagstisch) | Java | ⭐ 0 | 🟢 90 |
 | [publicmedia](https://github.com/inpercima/publicmedia) | TypeScript | ⭐ 6 | 🟢 76 |
 | [covid-19](https://github.com/inpercima/covid-19) | TypeScript | ⭐ 4 | 🟡 74 |
 | [cryptocheck](https://github.com/inpercima/cryptocheck) | Java | ⭐ 4 | 🟡 74 |
+| [feature-app](https://github.com/inpercima/feature-app) | TypeScript | ⭐ 0 | 🟡 70 |
