@@ -130,34 +130,46 @@ export async function analyzeRepo(username, repo, token) {
   };
 
   // Fetch files in parallel where possible
-  const [packageJson, pomXml, mavenWrapperProps, readmeText, ciYml, ciYaml] = await Promise.all([
+  const [rootPackageJson, frontendPackageJson, rootPomXml, backendPomXml, rootMavenWrapperProps, backendMavenWrapperProps, readmeText, nodeCi, javaCi] = await Promise.all([
     fetchFileContent(username, name, "package.json", token),
+    fetchFileContent(username, name, "frontend/package.json", token),
     fetchFileContent(username, name, "pom.xml", token),
+    fetchFileContent(username, name, "backend/pom.xml", token),
     fetchFileContent(username, name, ".mvn/wrapper/maven-wrapper.properties", token),
+    fetchFileContent(username, name, "backend/.mvn/wrapper/maven-wrapper.properties", token),
     fetchFileContent(username, name, "README.md", token),
-    fetchFileContent(username, name, ".github/workflows/ci.yml", token),
-    fetchFileContent(username, name, ".github/workflows/ci.yaml", token),
+    fetchFileContent(username, name, ".github/workflows/node_ci.yml", token),
+    fetchFileContent(username, name, ".github/workflows/java_ci.yaml", token),
   ]);
 
   meta.hasReadme = readmeText !== null;
-  meta.hasCI = ciYml !== null || ciYaml !== null;
+  meta.hasCI = nodeCi !== null || javaCi !== null;
 
+  const packageJson = rootPackageJson || frontendPackageJson;
   if (packageJson) {
     try {
       const pkg = JSON.parse(packageJson);
       meta.angular = detectAngular(pkg);
       meta.nodeVersion = detectNodeVersion(pkg);
       meta.pnpmVersion = detectPnpmVersion(pkg);
+
+      if (meta.angular === null && frontendPackageJson !== null) {
+        // If root package.json doesn't have Angular, check frontend one
+        const frontendPkg = JSON.parse(frontendPackageJson);
+        meta.angular = detectAngular(frontendPkg);
+      }
     } catch {
       // Malformed package.json – skip
     }
   }
 
+  const mavenWrapperProps = rootMavenWrapperProps || backendMavenWrapperProps;
   if (mavenWrapperProps) {
     const wrapperVersion = detectMavenVersionFromWrapper(mavenWrapperProps);
     if (wrapperVersion) meta.mavenVersion = wrapperVersion;
   }
 
+  const pomXml = rootPomXml || backendPomXml;
   if (pomXml) {
     if (!meta.mavenVersion) {
       meta.mavenVersion = detectMavenVersion(pomXml);

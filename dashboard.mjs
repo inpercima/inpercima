@@ -51,7 +51,9 @@ async function main() {
   console.log(`Stats: ${stats.totalRepos} repos, ${stats.totalStars} stars, avg health ${stats.avgHealth}/100`);
 }
 
-main().catch(err => {
+try {
+  await main();
+} catch (err) {
   console.error("Dashboard generation failed:", err);
   process.exit(1);
-});
+}
