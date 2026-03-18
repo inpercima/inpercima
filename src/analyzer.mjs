@@ -26,14 +26,15 @@ function detectNodeVersion(pkg) {
 }
 
 /**
- * Extract pnpm version from packageManager field in package.json.
- * @param {object} pkg
+ * Extract pnpm version from README content by looking for a line like:
+ *   npm install -g pnpm@10.32.0
+ * @param {string} readmeText
  * @returns {string|null}
  */
-function detectPnpmVersion(pkg) {
-  const pm = pkg?.packageManager ?? "";
-  if (!pm.startsWith("pnpm@")) return null;
-  return pm.replace("pnpm@", "").trim();
+function detectPnpmVersion(readmeText) {
+  const match = readmeText.match(/pnpm@([\d.]+)/);
+  if (match) return match[1].trim();
+  return null;
 }
 
 /**
@@ -151,7 +152,6 @@ export async function analyzeRepo(username, repo, token) {
       const pkg = JSON.parse(packageJson);
       meta.angular = detectAngular(pkg);
       meta.nodeVersion = detectNodeVersion(pkg);
-      meta.pnpmVersion = detectPnpmVersion(pkg);
 
       if (meta.angular === null && frontendPackageJson !== null) {
         // If root package.json doesn't have Angular, check frontend one
@@ -161,6 +161,10 @@ export async function analyzeRepo(username, repo, token) {
     } catch {
       // Malformed package.json – skip
     }
+  }
+
+  if (meta.hasReadme) {
+    meta.pnpmVersion = detectPnpmVersion(readmeText);
   }
 
   const mavenWrapperProps = rootMavenWrapperProps || backendMavenWrapperProps;
