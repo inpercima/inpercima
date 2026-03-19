@@ -2,7 +2,7 @@
  * Repository analyzer: extracts version info and calculates health scores.
  */
 
-import { fetchFileContent } from "./api.mjs";
+import { fetchFileContent } from './api.mjs';
 
 /**
  * Extract Angular version from package.json content.
@@ -11,9 +11,9 @@ import { fetchFileContent } from "./api.mjs";
  */
 function detectAngular(pkg) {
   const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-  const version = deps?.["@angular/core"];
+  const version = deps?.['@angular/core'];
   if (!version) return null;
-  return version.replace(/[\^~>=<]/g, "").trim();
+  return version.replace(/[\^~>=<]/g, '').trim();
 }
 
 /**
@@ -22,7 +22,9 @@ function detectAngular(pkg) {
  * @returns {string|null}
  */
 function detectNodeVersion(pkg) {
-  return pkg?.engines?.node ?? null;
+  const version = pkg?.engines?.node;
+  if (!version) return null;
+  return version.replace(/[\^~>=<]/g, '').replace('>=', '').trim();
 }
 
 /**
@@ -67,10 +69,10 @@ function detectMavenVersion(pomXml) {
  * @returns {string|null}
  */
 function detectJavaFramework(content) {
-  if (/spring-boot/i.test(content)) return "Spring Boot";
-  if (/quarkus/i.test(content)) return "Quarkus";
-  if (/micronaut/i.test(content)) return "Micronaut";
-  if (/helidon/i.test(content)) return "Helidon";
+  if (/spring-boot/i.test(content)) return 'Spring Boot';
+  if (/quarkus/i.test(content)) return 'Quarkus';
+  if (/micronaut/i.test(content)) return 'Micronaut';
+  if (/helidon/i.test(content)) return 'Helidon';
   return null;
 }
 
@@ -98,6 +100,19 @@ export function calculateHealthScore(repo, meta) {
 
   // CI/CD setup (20 points)
   if (meta.hasCI) score += 20;
+
+  // node version >= 24 (2 points)
+  if (meta.nodeVersion) {
+    const major = parseInt(meta.nodeVersion.split('.')[0]);
+    if (major >= 24) score += 2;
+  }
+
+  // angular version (up to 4 points)
+  if (meta.angular) {
+    const major = parseInt(meta.angular.split('.')[0]);
+    if (major >= 21) score += 4;
+    else if (major >= 20) score += 2;
+  }
 
   // Has topics/tags (10 points)
   if (repo.topics && repo.topics.length > 0) score += 10;
@@ -131,16 +146,26 @@ export async function analyzeRepo(username, repo, token) {
   };
 
   // Fetch files in parallel where possible
-  const [rootPackageJson, frontendPackageJson, rootPomXml, backendPomXml, rootMavenWrapperProps, backendMavenWrapperProps, readmeText, nodeCi, javaCi] = await Promise.all([
-    fetchFileContent(username, name, "package.json", token),
-    fetchFileContent(username, name, "frontend/package.json", token),
-    fetchFileContent(username, name, "pom.xml", token),
-    fetchFileContent(username, name, "backend/pom.xml", token),
-    fetchFileContent(username, name, ".mvn/wrapper/maven-wrapper.properties", token),
-    fetchFileContent(username, name, "backend/.mvn/wrapper/maven-wrapper.properties", token),
-    fetchFileContent(username, name, "README.md", token),
-    fetchFileContent(username, name, ".github/workflows/node_ci.yml", token),
-    fetchFileContent(username, name, ".github/workflows/java_ci.yaml", token),
+  const [
+    rootPackageJson,
+    frontendPackageJson,
+    rootPomXml,
+    backendPomXml,
+    rootMavenWrapperProps,
+    backendMavenWrapperProps,
+    readmeText,
+    nodeCi,
+    javaCi,
+  ] = await Promise.all([
+    fetchFileContent(username, name, 'package.json', token),
+    fetchFileContent(username, name, 'frontend/package.json', token),
+    fetchFileContent(username, name, 'pom.xml', token),
+    fetchFileContent(username, name, 'backend/pom.xml', token),
+    fetchFileContent(username, name, '.mvn/wrapper/maven-wrapper.properties', token),
+    fetchFileContent(username, name, 'backend/.mvn/wrapper/maven-wrapper.properties', token),
+    fetchFileContent(username, name, 'README.md', token),
+    fetchFileContent(username, name, '.github/workflows/node_ci.yml', token),
+    fetchFileContent(username, name, '.github/workflows/java_ci.yaml', token),
   ]);
 
   meta.hasReadme = readmeText !== null;
@@ -194,9 +219,7 @@ export async function analyzeRepo(username, repo, token) {
 export function aggregateStats(analyzed) {
   const totalRepos = analyzed.length;
   const totalStars = analyzed.reduce((sum, { repo }) => sum + repo.stargazers_count, 0);
-  const avgHealth = totalRepos > 0
-    ? Math.round(analyzed.reduce((sum, { meta }) => sum + meta.healthScore, 0) / totalRepos)
-    : 0;
+  const avgHealth = totalRepos > 0 ? Math.round(analyzed.reduce((sum, { meta }) => sum + meta.healthScore, 0) / totalRepos) : 0;
 
   // Tally language counts
   const langCounts = {};
