@@ -75,40 +75,103 @@ function detectJavaFramework(content) {
 }
 
 /**
+ * Default weights for the health score calculation.
+ * Each weight is a fraction of the total score (0–1), and all weights should sum to 1.0.
+ *
+ * @typedef {object} ActivityThreshold
+ * @property {number} days        - Maximum age in days for this tier to apply.
+ * @property {number} multiplier  - Fraction of the activity weight awarded (0–1).
+ *
+ * @typedef {object} ActivityWeightConfig
+ * @property {number} weight                          - Fraction of total score (0–1).
+ * @property {object} thresholds
+ * @property {ActivityThreshold} thresholds.excellent
+ * @property {ActivityThreshold} thresholds.good
+ * @property {ActivityThreshold} thresholds.fair
+ * @property {ActivityThreshold} thresholds.poor
+ *
+ * @typedef {object} SimpleWeightConfig
+ * @property {number} weight  - Fraction of total score (0–1).
+ *
+ * @typedef {object} StarsWeightConfig
+ * @property {number} weight    - Fraction of total score (0–1).
+ * @property {number} maxStars  - Star count that earns the full weight.
+ *
+ * @typedef {object} HealthScoreWeights
+ * @property {ActivityWeightConfig} recentActivity
+ * @property {SimpleWeightConfig}   description
+ * @property {SimpleWeightConfig}   readme
+ * @property {SimpleWeightConfig}   cicd
+ * @property {SimpleWeightConfig}   topics
+ * @property {SimpleWeightConfig}   license
+ * @property {StarsWeightConfig}    stars
+ */
+
+/** @type {HealthScoreWeights} */
+export const defaultWeights = {
+  recentActivity: {
+    weight: 0.3,
+    thresholds: {
+      excellent: { days: 30, multiplier: 1.0 },
+      good: { days: 90, multiplier: 0.67 },
+      fair: { days: 180, multiplier: 0.33 },
+      poor: { days: 365, multiplier: 0.17 },
+    },
+  },
+  description: { weight: 0.1 },
+  readme: { weight: 0.1 },
+  cicd: { weight: 0.2 },
+  topics: { weight: 0.1 },
+  license: { weight: 0.1 },
+  stars: { weight: 0.1, maxStars: 10 },
+};
+
+/**
  * Calculate a health score (0–100) for a repository based on several signals.
- * @param {object} repo  Raw GitHub repo object
- * @param {object} meta  Derived metadata (hasCI, hasReadme, etc.)
+ * Weights control how much each factor contributes to the final score.
+ * For best results, all weights should sum to 1.0; the caller is responsible
+ * for ensuring this when providing custom weights.
+ *
+ * @param {object}             repo     Raw GitHub repo object
+ * @param {object}             meta     Derived metadata (hasCI, hasReadme, etc.)
+ * @param {HealthScoreWeights} [weights] Optional custom weights; defaults to {@link defaultWeights}
  * @returns {number}
  */
-export function calculateHealthScore(repo, meta) {
+export function calculateHealthScore(repo, meta, weights = defaultWeights) {
   let score = 0;
 
-  // Recent activity (up to 30 points)
+  // Recent activity
   const daysSinceUpdate = (Date.now() - new Date(repo.pushed_at).getTime()) / (1000 * 60 * 60 * 24);
-  if (daysSinceUpdate < 30) score += 30;
-  else if (daysSinceUpdate < 90) score += 20;
-  else if (daysSinceUpdate < 180) score += 10;
-  else if (daysSinceUpdate < 365) score += 5;
+  const { thresholds } = weights.recentActivity;
+  let activityMultiplier = 0;
+  if (daysSinceUpdate < thresholds.excellent.days) activityMultiplier = thresholds.excellent.multiplier;
+  else if (daysSinceUpdate < thresholds.good.days) activityMultiplier = thresholds.good.multiplier;
+  else if (daysSinceUpdate < thresholds.fair.days) activityMultiplier = thresholds.fair.multiplier;
+  else if (daysSinceUpdate < thresholds.poor.days) activityMultiplier = thresholds.poor.multiplier;
+  score += weights.recentActivity.weight * activityMultiplier * 100;
 
-  // Description present (10 points)
-  if (repo.description) score += 10;
+  // Description present
+  if (repo.description) score += weights.description.weight * 100;
 
-  // README present (10 points)
-  if (meta.hasReadme) score += 10;
+  // README present
+  if (meta.hasReadme) score += weights.readme.weight * 100;
 
-  // CI/CD setup (20 points)
-  if (meta.hasCI) score += 20;
+  // CI/CD setup
+  if (meta.hasCI) score += weights.cicd.weight * 100;
 
-  // Has topics/tags (10 points)
-  if (repo.topics && repo.topics.length > 0) score += 10;
+  // Has topics/tags
+  if (repo.topics && repo.topics.length > 0) score += weights.topics.weight * 100;
 
-  // Has license (10 points)
-  if (repo.license) score += 10;
+  // Has license
+  if (repo.license) score += weights.license.weight * 100;
 
-  // Stars as social proof (up to 10 points)
-  score += Math.min(repo.stargazers_count, 10);
+  // Stars as social proof (guard against maxStars being 0)
+  if (weights.stars.maxStars > 0) {
+    const starFraction = Math.min(repo.stargazers_count, weights.stars.maxStars) / weights.stars.maxStars;
+    score += weights.stars.weight * starFraction * 100;
+  }
 
-  return Math.min(score, 100);
+  return Math.round(Math.min(score, 100));
 }
 
 /**
