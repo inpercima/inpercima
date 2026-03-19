@@ -8,7 +8,7 @@
 
 | 🗂️ Repositories | ⭐ Total Stars | 💚 Avg. Health Score |
 | :-: | :-: | :-: |
-| **23** | **18** | **60 / 100** |
+| **23** | **18** | **62 / 100** |
 
 ## 🌐 Top Languages
 
@@ -24,8 +24,8 @@
 
 | Repository | Language | Stars | Health |
 | ---------- | -------- | :---: | :----: |
-| [mittagstisch](https://github.com/inpercima/mittagstisch) | Java | ⭐ 0 | 🟢 90 |
-| [publicmedia](https://github.com/inpercima/publicmedia) | TypeScript | ⭐ 6 | 🟢 76 |
+| [mittagstisch](https://github.com/inpercima/mittagstisch) | Java | ⭐ 0 | 🟢 96 |
+| [publicmedia](https://github.com/inpercima/publicmedia) | TypeScript | ⭐ 6 | 🟢 80 |
+| [mdrza-ranking](https://github.com/inpercima/mdrza-ranking) | TypeScript | ⭐ 0 | 🟢 76 |
 | [covid-19](https://github.com/inpercima/covid-19) | TypeScript | ⭐ 4 | 🟡 74 |
 | [cryptocheck](https://github.com/inpercima/cryptocheck) | Java | ⭐ 4 | 🟡 74 |
-| [feature-app](https://github.com/inpercima/feature-app) | TypeScript | ⭐ 0 | 🟡 70 |
