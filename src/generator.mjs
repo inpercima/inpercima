@@ -93,7 +93,7 @@ function renderKpis(stats) {
       </div>`;
   }).join("");
 
-  const langCounts = stats.topLanguages.map(({ lang, count }) => `
+  const langCounts = stats.topPrimaryLanguages.map(({ lang, count }) => `
       <div class="flex items-center justify-between mb-1.5">
         <span class="text-xs">${esc(lang)}</span>
         <span class="text-xs text-slate-400">${count}</span>

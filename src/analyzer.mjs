@@ -233,25 +233,28 @@ export function aggregateStats(analyzed) {
   const totalStars = analyzed.reduce((sum, { repo }) => sum + repo.stargazers_count, 0);
   const avgHealth = totalRepos > 0 ? Math.round(analyzed.reduce((sum, { meta }) => sum + meta.healthScore, 0) / totalRepos) : 0;
 
-  // Tally language counts using the full language list per repo
-  const langCounts = {};
+  // Tally language counts: primary language only (for "Top Languages" card)
+  const primaryLangCounts = {};
+  // Tally language counts: all languages per repo (for "% Usage of Languages" card)
+  const allLangCounts = {};
   for (const { repo, meta } of analyzed) {
-    let langs;
-    if (meta.languages && meta.languages.length > 0) {
-      langs = meta.languages;
-    } else if (repo.language) {
-      langs = [repo.language];
-    } else {
-      langs = [];
+    const primaryLang = (meta.languages && meta.languages.length > 0) ? meta.languages[0] : repo.language;
+    if (primaryLang) {
+      primaryLangCounts[primaryLang] = (primaryLangCounts[primaryLang] ?? 0) + 1;
     }
-    for (const lang of langs) {
-      langCounts[lang] = (langCounts[lang] ?? 0) + 1;
+    const allLangs = (meta.languages && meta.languages.length > 0) ? meta.languages : (repo.language ? [repo.language] : []);
+    for (const lang of allLangs) {
+      allLangCounts[lang] = (allLangCounts[lang] ?? 0) + 1;
     }
   }
-  const topLanguages = Object.entries(langCounts)
+  const topPrimaryLanguages = Object.entries(primaryLangCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([lang, count]) => ({ lang, count }));
+  const topLanguages = Object.entries(allLangCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
     .map(([lang, count]) => ({ lang, count }));
 
-  return { totalRepos, totalStars, avgHealth, topLanguages };
+  return { totalRepos, totalStars, avgHealth, topPrimaryLanguages, topLanguages };
 }
