@@ -44,9 +44,15 @@ function renderRow(repo, meta) {
     .map(t => `<span class="inline-block bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded px-1.5 py-0.5 text-xs mb-0.5">${esc(t)}</span>`)
     .join(" ");
 
-  const language = repo.language
-    ? `<span class="inline-block bg-slate-700 border border-slate-600 rounded px-2 py-0.5 text-xs">${esc(repo.language)}</span>`
-    : "–";
+  const languagesHtml = (meta.languages && meta.languages.length > 0)
+    ? meta.languages.map(l => {
+        const pct = meta.languagePercentages?.[l];
+        const label = pct != null ? `${esc(l)}/${pct}%` : esc(l);
+        return `<span class="inline-block bg-slate-700 border border-slate-600 rounded px-2 py-0.5 text-xs mb-0.5">${label}</span>`;
+      }).join(" ")
+    : repo.language
+      ? `<span class="inline-block bg-slate-700 border border-slate-600 rounded px-2 py-0.5 text-xs">${esc(repo.language)}</span>`
+      : "–";
 
   const tdBase = "py-3 px-4 align-top border-t border-slate-700 group-hover:bg-slate-800/50";
 
@@ -55,7 +61,7 @@ function renderRow(repo, meta) {
        <a href="${esc(repo.html_url)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-blue-400 hover:underline">${esc(repo.name)}</a>
        ${repo.description ? `<div class="text-xs text-slate-400 mt-0.5 max-w-xs hidden sm:block">${esc(repo.description)}</div>` : ""}
      </td>`,
-    `<td class="${tdBase}">${language}</td>`,
+    `<td class="${tdBase}">${languagesHtml}</td>`,
     `<td class="${tdBase}">${repo.stargazers_count}</td>`,
     `<td class="${tdBase}">${topics || "–"}</td>`,
     `<td class="${tdBase}">${meta.angular ? esc(meta.angular) : "–"}</td>`,
@@ -83,14 +89,20 @@ function renderKpis(stats) {
         <div class="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
           <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style="width:${pct}%"></div>
         </div>
-        <span class="text-xs text-slate-400 w-6 text-right">${count}</span>
+        <span class="text-xs text-slate-400 w-10 text-right">${pct}%</span>
       </div>`;
   }).join("");
+
+  const langCounts = stats.topPrimaryLanguages.map(({ lang, count }) => `
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="text-xs">${esc(lang)}</span>
+        <span class="text-xs text-slate-400">${count}</span>
+      </div>`).join("");
 
   const cardClass = "bg-slate-800 border border-slate-700 rounded-xl p-5";
 
   return `
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
       <div class="${cardClass}">
         <div class="text-4xl font-bold leading-none mb-1">${stats.totalRepos}</div>
         <div class="text-xs uppercase tracking-wider text-slate-400">Repositories</div>
@@ -105,6 +117,10 @@ function renderKpis(stats) {
       </div>
       <div class="${cardClass}">
         <div class="text-xs uppercase tracking-wider text-slate-400 mb-3">Top Languages</div>
+        ${langCounts}
+      </div>
+      <div class="${cardClass}">
+        <div class="text-xs uppercase tracking-wider text-slate-400 mb-3">% Usage of Languages</div>
         ${langBars}
       </div>
     </div>`;

@@ -2,7 +2,7 @@
  * Repository analyzer: extracts version info and calculates health scores.
  */
 
-import { fetchFileContent } from './api.mjs';
+import { fetchFileContent, fetchLanguages } from './api.mjs';
 
 /**
  * Extract Angular version from package.json content.
@@ -143,6 +143,8 @@ export async function analyzeRepo(username, repo, token) {
     pnpmVersion: null,
     mavenVersion: null,
     javaFramework: null,
+    languages: [],
+    languagePercentages: {},
   };
 
   // Fetch files in parallel where possible
@@ -156,6 +158,7 @@ export async function analyzeRepo(username, repo, token) {
     readmeText,
     nodeCi,
     javaCi,
+    languagesData,
   ] = await Promise.all([
     fetchFileContent(username, name, 'package.json', token),
     fetchFileContent(username, name, 'frontend/package.json', token),
@@ -166,10 +169,19 @@ export async function analyzeRepo(username, repo, token) {
     fetchFileContent(username, name, 'README.md', token),
     fetchFileContent(username, name, '.github/workflows/node_ci.yml', token),
     fetchFileContent(username, name, '.github/workflows/java_ci.yaml', token),
+    fetchLanguages(username, name, token),
   ]);
 
   meta.hasReadme = readmeText !== null;
   meta.hasCI = nodeCi !== null || javaCi !== null;
+  meta.languages = Object.keys(languagesData).sort((a, b) => languagesData[b] - languagesData[a]);
+  const totalBytes = Object.values(languagesData).reduce((sum, b) => sum + b, 0);
+  meta.languagePercentages = {};
+  if (totalBytes > 0) {
+    for (const [lang, bytes] of Object.entries(languagesData)) {
+      meta.languagePercentages[lang] = Math.round((bytes / totalBytes) * 100);
+    }
+  }
 
   const packageJson = rootPackageJson || frontendPackageJson;
   if (packageJson) {
@@ -221,17 +233,28 @@ export function aggregateStats(analyzed) {
   const totalStars = analyzed.reduce((sum, { repo }) => sum + repo.stargazers_count, 0);
   const avgHealth = totalRepos > 0 ? Math.round(analyzed.reduce((sum, { meta }) => sum + meta.healthScore, 0) / totalRepos) : 0;
 
-  // Tally language counts
-  const langCounts = {};
-  for (const { repo } of analyzed) {
-    if (repo.language) {
-      langCounts[repo.language] = (langCounts[repo.language] ?? 0) + 1;
+  // Tally language counts: primary language only (for "Top Languages" card)
+  const primaryLangCounts = {};
+  // Tally language counts: all languages per repo (for "% Usage of Languages" card)
+  const allLangCounts = {};
+  for (const { repo, meta } of analyzed) {
+    const primaryLang = (meta.languages && meta.languages.length > 0) ? meta.languages[0] : repo.language;
+    if (primaryLang) {
+      primaryLangCounts[primaryLang] = (primaryLangCounts[primaryLang] ?? 0) + 1;
+    }
+    const allLangs = (meta.languages && meta.languages.length > 0) ? meta.languages : (repo.language ? [repo.language] : []);
+    for (const lang of allLangs) {
+      allLangCounts[lang] = (allLangCounts[lang] ?? 0) + 1;
     }
   }
-  const topLanguages = Object.entries(langCounts)
+  const topPrimaryLanguages = Object.entries(primaryLangCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([lang, count]) => ({ lang, count }));
+  const topLanguages = Object.entries(allLangCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
     .map(([lang, count]) => ({ lang, count }));
 
-  return { totalRepos, totalStars, avgHealth, topLanguages };
+  return { totalRepos, totalStars, avgHealth, topPrimaryLanguages, topLanguages };
 }
