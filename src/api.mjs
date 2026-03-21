@@ -50,6 +50,27 @@ export async function fetchRepos(username, token) {
 }
 
 /**
+ * Fetch the language breakdown (bytes per language) for a repository.
+ * Returns an object like { JavaScript: 12345, TypeScript: 6789 }, or {} on error.
+ * @param {string} username
+ * @param {string} repoName
+ * @param {string|undefined} token
+ * @returns {Promise<Record<string, number>>}
+ */
+export async function fetchLanguages(username, repoName, token) {
+  const headers = buildHeaders(token);
+  const url = `${BASE_URL}/repos/${username}/${repoName}/languages`;
+
+  try {
+    const res = await fetch(url, { headers });
+    if (!res.ok) return {};
+    return await res.json();
+  } catch {
+    return {};
+  }
+}
+
+/**
  * Fetch the raw content of a file from a repository.
  * Returns null if the file does not exist (404) or on error.
  * @param {string} username

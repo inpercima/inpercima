@@ -2,7 +2,7 @@
  * Repository analyzer: extracts version info and calculates health scores.
  */
 
-import { fetchFileContent } from './api.mjs';
+import { fetchFileContent, fetchLanguages } from './api.mjs';
 
 /**
  * Extract Angular version from package.json content.
@@ -143,6 +143,7 @@ export async function analyzeRepo(username, repo, token) {
     pnpmVersion: null,
     mavenVersion: null,
     javaFramework: null,
+    languages: [],
   };
 
   // Fetch files in parallel where possible
@@ -156,6 +157,7 @@ export async function analyzeRepo(username, repo, token) {
     readmeText,
     nodeCi,
     javaCi,
+    languagesData,
   ] = await Promise.all([
     fetchFileContent(username, name, 'package.json', token),
     fetchFileContent(username, name, 'frontend/package.json', token),
@@ -166,10 +168,12 @@ export async function analyzeRepo(username, repo, token) {
     fetchFileContent(username, name, 'README.md', token),
     fetchFileContent(username, name, '.github/workflows/node_ci.yml', token),
     fetchFileContent(username, name, '.github/workflows/java_ci.yaml', token),
+    fetchLanguages(username, name, token),
   ]);
 
   meta.hasReadme = readmeText !== null;
   meta.hasCI = nodeCi !== null || javaCi !== null;
+  meta.languages = Object.keys(languagesData).sort((a, b) => languagesData[b] - languagesData[a]);
 
   const packageJson = rootPackageJson || frontendPackageJson;
   if (packageJson) {
