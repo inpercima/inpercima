@@ -225,11 +225,19 @@ export function aggregateStats(analyzed) {
   const totalStars = analyzed.reduce((sum, { repo }) => sum + repo.stargazers_count, 0);
   const avgHealth = totalRepos > 0 ? Math.round(analyzed.reduce((sum, { meta }) => sum + meta.healthScore, 0) / totalRepos) : 0;
 
-  // Tally language counts
+  // Tally language counts using the full language list per repo
   const langCounts = {};
-  for (const { repo } of analyzed) {
-    if (repo.language) {
-      langCounts[repo.language] = (langCounts[repo.language] ?? 0) + 1;
+  for (const { repo, meta } of analyzed) {
+    let langs;
+    if (meta.languages && meta.languages.length > 0) {
+      langs = meta.languages;
+    } else if (repo.language) {
+      langs = [repo.language];
+    } else {
+      langs = [];
+    }
+    for (const lang of langs) {
+      langCounts[lang] = (langCounts[lang] ?? 0) + 1;
     }
   }
   const topLanguages = Object.entries(langCounts)
