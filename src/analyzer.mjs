@@ -144,6 +144,7 @@ export async function analyzeRepo(username, repo, token) {
     mavenVersion: null,
     javaFramework: null,
     languages: [],
+    languagePercentages: {},
   };
 
   // Fetch files in parallel where possible
@@ -174,6 +175,13 @@ export async function analyzeRepo(username, repo, token) {
   meta.hasReadme = readmeText !== null;
   meta.hasCI = nodeCi !== null || javaCi !== null;
   meta.languages = Object.keys(languagesData).sort((a, b) => languagesData[b] - languagesData[a]);
+  const totalBytes = Object.values(languagesData).reduce((sum, b) => sum + b, 0);
+  meta.languagePercentages = {};
+  if (totalBytes > 0) {
+    for (const [lang, bytes] of Object.entries(languagesData)) {
+      meta.languagePercentages[lang] = Math.round((bytes / totalBytes) * 100);
+    }
+  }
 
   const packageJson = rootPackageJson || frontendPackageJson;
   if (packageJson) {

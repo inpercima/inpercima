@@ -45,7 +45,11 @@ function renderRow(repo, meta) {
     .join(" ");
 
   const languagesHtml = (meta.languages && meta.languages.length > 0)
-    ? meta.languages.map(l => `<span class="inline-block bg-slate-700 border border-slate-600 rounded px-2 py-0.5 text-xs mb-0.5">${esc(l)}</span>`).join(" ")
+    ? meta.languages.map(l => {
+        const pct = meta.languagePercentages?.[l];
+        const label = pct != null ? `${esc(l)}/${pct}%` : esc(l);
+        return `<span class="inline-block bg-slate-700 border border-slate-600 rounded px-2 py-0.5 text-xs mb-0.5">${label}</span>`;
+      }).join(" ")
     : repo.language
       ? `<span class="inline-block bg-slate-700 border border-slate-600 rounded px-2 py-0.5 text-xs">${esc(repo.language)}</span>`
       : "–";
@@ -85,7 +89,7 @@ function renderKpis(stats) {
         <div class="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
           <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style="width:${pct}%"></div>
         </div>
-        <span class="text-xs text-slate-400 w-6 text-right">${count}</span>
+        <span class="text-xs text-slate-400 w-10 text-right">${pct}%</span>
       </div>`;
   }).join("");
 
