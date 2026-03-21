@@ -93,10 +93,16 @@ function renderKpis(stats) {
       </div>`;
   }).join("");
 
+  const langCounts = stats.topLanguages.map(({ lang, count }) => `
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="text-xs">${esc(lang)}</span>
+        <span class="text-xs text-slate-400">${count}</span>
+      </div>`).join("");
+
   const cardClass = "bg-slate-800 border border-slate-700 rounded-xl p-5";
 
   return `
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
       <div class="${cardClass}">
         <div class="text-4xl font-bold leading-none mb-1">${stats.totalRepos}</div>
         <div class="text-xs uppercase tracking-wider text-slate-400">Repositories</div>
@@ -111,6 +117,10 @@ function renderKpis(stats) {
       </div>
       <div class="${cardClass}">
         <div class="text-xs uppercase tracking-wider text-slate-400 mb-3">Top Languages</div>
+        ${langCounts}
+      </div>
+      <div class="${cardClass}">
+        <div class="text-xs uppercase tracking-wider text-slate-400 mb-3">% Usage of Languages</div>
         ${langBars}
       </div>
     </div>`;
