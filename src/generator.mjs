@@ -81,23 +81,29 @@ function renderRow(repo, meta) {
  * @returns {string}
  */
 function renderKpis(stats) {
-  const langBars = stats.topLanguages.map(({ lang, count }) => {
+  const primaryLangBars = stats.topPrimaryLanguages.map(({ lang, count }) => {
     const pct = stats.totalRepos > 0 ? Math.round((count / stats.totalRepos) * 100) : 0;
     return `
       <div class="flex items-center gap-2 mb-1.5">
-        <span class="w-20 text-xs">${esc(lang)}</span>
+        <span class="w-20 text-xs truncate">${esc(lang)}</span>
         <div class="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
-          <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style="width:${pct}%"></div>
+          <div class="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full" style="width:${pct}%"></div>
         </div>
-        <span class="text-xs text-slate-400 w-10 text-right">${pct}%</span>
+        <span class="text-xs text-slate-400 w-6 text-right">${count}</span>
       </div>`;
   }).join("");
 
-  const langCounts = stats.topPrimaryLanguages.map(({ lang, count }) => `
-      <div class="flex items-center justify-between mb-1.5">
-        <span class="text-xs">${esc(lang)}</span>
-        <span class="text-xs text-slate-400">${count}</span>
-      </div>`).join("");
+  const langUsageBars = stats.topLanguages.map(({ lang, count }) => {
+    const pct = stats.totalRepos > 0 ? Math.round((count / stats.totalRepos) * 100) : 0;
+    return `
+      <div class="flex items-center gap-2 mb-1.5">
+        <span class="w-20 text-xs truncate">${esc(lang)}</span>
+        <div class="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style="width:${pct}%"></div>
+        </div>
+        <span class="text-xs text-slate-400 whitespace-nowrap" aria-label="${count} of ${stats.totalRepos} repos">${count}/${stats.totalRepos}</span>
+      </div>`;
+  }).join("");
 
   const cardClass = "bg-slate-800 border border-slate-700 rounded-xl p-5";
 
@@ -116,12 +122,12 @@ function renderKpis(stats) {
         <div class="text-xs uppercase tracking-wider text-slate-400">Avg. Health Score</div>
       </div>
       <div class="${cardClass}">
-        <div class="text-xs uppercase tracking-wider text-slate-400 mb-3">Top Languages</div>
-        ${langCounts}
+        <div class="text-xs uppercase tracking-wider text-slate-400 mb-3">🏷️ Primary Languages</div>
+        ${primaryLangBars}
       </div>
       <div class="${cardClass}">
-        <div class="text-xs uppercase tracking-wider text-slate-400 mb-3">% Usage of Languages</div>
-        ${langBars}
+        <div class="text-xs uppercase tracking-wider text-slate-400 mb-3">📊 Language Usage</div>
+        ${langUsageBars}
       </div>
     </div>`;
 }
