@@ -152,11 +152,18 @@ export function generateReadme(analyzed, stats, generatedAt) {
     .sort((a, b) => b.meta.healthScore - a.meta.healthScore)
     .slice(0, 5);
 
-  const langTable = stats.topLanguages
+  const primaryLangTable = stats.topPrimaryLanguages
+    .map(({ lang, count }) => {
+      const filled = stats.totalRepos > 0 ? Math.min(20, Math.round((count / stats.totalRepos) * 20)) : 0;
+      return `| ${lang} | ${count} | ${"█".repeat(filled)}${"░".repeat(20 - filled)} |`;
+    })
+    .join("\n");
+
+  const langUsageTable = stats.topLanguages
     .map(({ lang, count }) => {
       const pct = stats.totalRepos > 0 ? Math.round((count / stats.totalRepos) * 100) : 0;
       const filled = Math.min(20, Math.round(pct / 5));
-      return `| ${lang} | ${count} | ${"█".repeat(filled)}${"░".repeat(20 - filled)} ${pct}% |`;
+      return `| ${lang} | ${"█".repeat(filled)}${"░".repeat(20 - filled)} | ${count} of ${stats.totalRepos} repos (${pct}%) |`;
     })
     .join("\n");
 
@@ -181,11 +188,17 @@ export function generateReadme(analyzed, stats, generatedAt) {
 | :-: | :-: | :-: |
 | **${stats.totalRepos}** | **${stats.totalStars}** | **${stats.avgHealth} / 100** |
 
-## 🌐 Top Languages
+## 🏷️ Primary Languages
 
 | Language | Repos | Distribution |
 | -------- | :---: | ------------ |
-${langTable}
+${primaryLangTable}
+
+## 📊 Language Usage
+
+| Language | Distribution | Repos |
+| -------- | ------------ | ----- |
+${langUsageTable}
 
 ## 🏆 Top 5 by Health Score
 
