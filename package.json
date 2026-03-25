@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "Developer dashboard for inpercima GitHub repositories",
   "type": "module",
-  "scripts": {
-    "start": "node dashboard.mjs",
-    "build": "node dashboard.mjs"
-  },
   "engines": {
     "node": ">=24.14.0"
   }
