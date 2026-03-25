@@ -60,7 +60,7 @@ function renderRow(repo, meta) {
   const cells = [
     `<td class="${tdBase}">
        <a href="${esc(repo.html_url)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-blue-400 hover:underline">${esc(repo.name)}</a>
-       ${repo.language ? `<div class="text-xs text-slate-500 mt-0.5 sm:hidden">${esc(repo.language)}</div>` : ""}
+       ${repo.language ? `<div class="text-xs text-slate-500 mt-0.5 sm:hidden" aria-hidden="true">${esc(repo.language)}</div>` : ""}
        ${repo.description ? `<div class="text-xs text-slate-400 mt-0.5 max-w-xs hidden sm:block">${esc(repo.description)}</div>` : ""}
      </td>`,
     `<td class="${tdHidden}">${languagesHtml}</td>`,
@@ -290,6 +290,8 @@ export function generateDashboard(analyzed, stats, generatedAt) {
   const TH_SORTED = "${TH_SORTED}";
   const TH_HIDDEN = "${TH_HIDDEN}";
   const TH_HIDDEN_SORTED = "${TH_HIDDEN_SORTED}";
+  // Columns hidden on mobile (< sm breakpoint). Must match the th/td elements
+  // that carry the "hidden sm:table-cell" class in the HTML template above.
   const MOBILE_HIDDEN_COLS = new Set([1, 3, 4, 5, 6, 7, 8]);
 
   const searchInput = document.getElementById("searchInput");
