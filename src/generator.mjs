@@ -60,6 +60,8 @@ function renderRow(repo, meta) {
   const cells = [
     `<td class="${tdBase}">
        <a href="${esc(repo.html_url)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-blue-400 hover:underline">${esc(repo.name)}</a>
+       ${meta.angular ? `<div class="text-xs text-slate-500 mt-0.5 sm:hidden">Angular ${esc(meta.angular)}</div>` : ""}
+       ${meta.nodeVersion ? `<div class="text-xs text-slate-500 mt-0.5 sm:hidden">Node.js ${esc(meta.nodeVersion)}</div>` : ""}
        ${repo.language ? `<div class="text-xs text-slate-500 mt-0.5 sm:hidden" aria-hidden="true">${esc(repo.language)}</div>` : ""}
        ${repo.description ? `<div class="text-xs text-slate-400 mt-0.5 max-w-xs hidden sm:block">${esc(repo.description)}</div>` : ""}
      </td>`,
