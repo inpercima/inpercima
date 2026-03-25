@@ -55,20 +55,22 @@ function renderRow(repo, meta) {
       : "–";
 
   const tdBase = "py-3 px-4 align-top border-t border-slate-700 group-hover:bg-slate-800/50";
+  const tdHidden = `hidden sm:table-cell ${tdBase}`;
 
   const cells = [
     `<td class="${tdBase}">
        <a href="${esc(repo.html_url)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-blue-400 hover:underline">${esc(repo.name)}</a>
+       ${repo.language ? `<div class="text-xs text-slate-500 mt-0.5 sm:hidden">${esc(repo.language)}</div>` : ""}
        ${repo.description ? `<div class="text-xs text-slate-400 mt-0.5 max-w-xs hidden sm:block">${esc(repo.description)}</div>` : ""}
      </td>`,
-    `<td class="${tdBase}">${languagesHtml}</td>`,
+    `<td class="${tdHidden}">${languagesHtml}</td>`,
     `<td class="${tdBase}">${repo.stargazers_count}</td>`,
-    `<td class="${tdBase}">${topics || "–"}</td>`,
-    `<td class="${tdBase}">${meta.angular ? esc(meta.angular) : "–"}</td>`,
-    `<td class="${tdBase}">${meta.mavenVersion ? esc(meta.mavenVersion) : "–"}</td>`,
-    `<td class="${tdBase}">${meta.nodeVersion ? esc(meta.nodeVersion) : "–"}</td>`,
-    `<td class="${tdBase}">${meta.pnpmVersion ? esc(meta.pnpmVersion) : "–"}</td>`,
-    `<td class="${tdBase}">${meta.javaFramework ? esc(meta.javaFramework) : "–"}</td>`,
+    `<td class="${tdHidden}">${topics || "–"}</td>`,
+    `<td class="${tdHidden}">${meta.angular ? esc(meta.angular) : "–"}</td>`,
+    `<td class="${tdHidden}">${meta.mavenVersion ? esc(meta.mavenVersion) : "–"}</td>`,
+    `<td class="${tdHidden}">${meta.nodeVersion ? esc(meta.nodeVersion) : "–"}</td>`,
+    `<td class="${tdHidden}">${meta.pnpmVersion ? esc(meta.pnpmVersion) : "–"}</td>`,
+    `<td class="${tdHidden}">${meta.javaFramework ? esc(meta.javaFramework) : "–"}</td>`,
     `<td class="${tdBase}">${healthBadge(meta.healthScore)}</td>`,
   ];
 
@@ -134,6 +136,8 @@ function renderKpis(stats) {
 
 const TH_BASE = "py-3 px-4 text-left text-xs uppercase tracking-wider text-slate-400 whitespace-nowrap cursor-pointer select-none hover:text-slate-200 transition-colors";
 const TH_SORTED = "py-3 px-4 text-left text-xs uppercase tracking-wider text-blue-400 whitespace-nowrap cursor-pointer select-none hover:text-blue-300 transition-colors";
+const TH_HIDDEN = `hidden sm:table-cell ${TH_BASE}`;
+const TH_HIDDEN_SORTED = `hidden sm:table-cell ${TH_SORTED}`;
 
 /**
  * Format a health score as an emoji + number string.
@@ -255,14 +259,14 @@ export function generateDashboard(analyzed, stats, generatedAt) {
       <thead class="bg-slate-800/50">
         <tr>
           <th class="${TH_BASE}" data-col="0">Repository</th>
-          <th class="${TH_BASE}" data-col="1">Language</th>
+          <th class="${TH_HIDDEN}" data-col="1">Language</th>
           <th class="${TH_SORTED}" data-col="2">Stars ▼</th>
-          <th class="${TH_BASE}" data-col="3">Topics</th>
-          <th class="${TH_BASE}" data-col="4">Angular</th>
-          <th class="${TH_BASE}" data-col="5">Maven</th>
-          <th class="${TH_BASE}" data-col="6">Node.js</th>
-          <th class="${TH_BASE}" data-col="7">pnpm</th>
-          <th class="${TH_BASE}" data-col="8">Java FW</th>
+          <th class="${TH_HIDDEN}" data-col="3">Topics</th>
+          <th class="${TH_HIDDEN}" data-col="4">Angular</th>
+          <th class="${TH_HIDDEN}" data-col="5">Maven</th>
+          <th class="${TH_HIDDEN}" data-col="6">Node.js</th>
+          <th class="${TH_HIDDEN}" data-col="7">pnpm</th>
+          <th class="${TH_HIDDEN}" data-col="8">Java FW</th>
           <th class="${TH_BASE}" data-col="9">Health</th>
         </tr>
       </thead>
@@ -284,6 +288,9 @@ export function generateDashboard(analyzed, stats, generatedAt) {
 (function() {
   const TH_BASE = "${TH_BASE}";
   const TH_SORTED = "${TH_SORTED}";
+  const TH_HIDDEN = "${TH_HIDDEN}";
+  const TH_HIDDEN_SORTED = "${TH_HIDDEN_SORTED}";
+  const MOBILE_HIDDEN_COLS = new Set([1, 3, 4, 5, 6, 7, 8]);
 
   const searchInput = document.getElementById("searchInput");
   const tbody = document.getElementById("repoBody");
@@ -335,10 +342,11 @@ export function generateDashboard(analyzed, stats, generatedAt) {
         sortAsc = col !== 2; // stars default desc
       }
       headers.forEach(h => {
-        h.className = TH_BASE;
+        const c = parseInt(h.dataset.col, 10);
+        h.className = MOBILE_HIDDEN_COLS.has(c) ? TH_HIDDEN : TH_BASE;
         h.textContent = h.textContent.replace(/ [▲▼]$/, "");
       });
-      th.className = TH_SORTED;
+      th.className = MOBILE_HIDDEN_COLS.has(col) ? TH_HIDDEN_SORTED : TH_SORTED;
       th.textContent = th.textContent.replace(/ [▲▼]$/, "") + (sortAsc ? " ▲" : " ▼");
       sortRows();
     });
