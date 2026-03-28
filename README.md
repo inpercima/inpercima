@@ -1,6 +1,6 @@
 # 📊 Developer Dashboard
 
-> 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **2026-03-27**
+> 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **2026-03-28**
 >
 > 🔗 [View Full Dashboard](https://inpercima.github.io/inpercima)
 
@@ -8,25 +8,25 @@
 
 | 🗂️ Repositories | ⭐ Total Stars | 💚 Avg. Health Score |
 | :-: | :-: | :-: |
-| **23** | **19** | **69 / 100** |
+| **23** | **19** | **70 / 100** |
 
 ## 🏷️ Primary Languages
 
 | Language | Repos | Distribution |
 | -------- | :---: | ------------ |
 | TypeScript | 12 | ██████████░░░░░░░░░░ |
-| Java | 5 | ████░░░░░░░░░░░░░░░░ |
+| Java | 4 | ███░░░░░░░░░░░░░░░░░ |
 | JavaScript | 3 | ███░░░░░░░░░░░░░░░░░ |
+| HTML | 2 | ██░░░░░░░░░░░░░░░░░░ |
 | Dockerfile | 1 | █░░░░░░░░░░░░░░░░░░░ |
-| HTML | 1 | █░░░░░░░░░░░░░░░░░░░ |
 
 ## 📊 Language Usage
 
 | Language | Distribution | Repos |
 | -------- | ------------ | ----- |
-| JavaScript | ███████████████░░░░░ | 17 of 23 repos (74%) |
-| TypeScript | ██████████████░░░░░░ | 16 of 23 repos (70%) |
-| HTML | ██████████████░░░░░░ | 16 of 23 repos (70%) |
+| JavaScript | ████████████████░░░░ | 18 of 23 repos (78%) |
+| TypeScript | ███████████████░░░░░ | 17 of 23 repos (74%) |
+| HTML | ███████████████░░░░░ | 17 of 23 repos (74%) |
 | CSS | ██████████████░░░░░░ | 16 of 23 repos (70%) |
 | SCSS | ███████████░░░░░░░░░ | 13 of 23 repos (57%) |
 
