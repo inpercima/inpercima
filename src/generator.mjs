@@ -1,6 +1,6 @@
 /**
  * HTML/CSS/JS dashboard generator.
- * Styling uses Tailwind CSS (CDN) utility classes.
+ * Styling uses Tailwind CSS (CDN) and daisyUI (CDN) utility classes and components.
  */
 
 /**
@@ -24,13 +24,12 @@ function esc(str) {
  * @returns {string}
  */
 function healthBadge(score) {
-  let color;
-  if (score >= 75) color = "#22c55e";       // green
-  else if (score >= 50) color = "#f59e0b";  // amber
-  else if (score >= 25) color = "#f97316";  // orange
-  else color = "#ef4444";                   // red
-
-  return `<span class="inline-block rounded px-2 py-0.5 text-xs font-semibold" style="background:${color}20;color:${color};border:1px solid ${color}40">${score}</span>`;
+  let cls;
+  if (score >= 75) cls = "badge badge-success";
+  else if (score >= 50) cls = "badge badge-warning";
+  else if (score >= 25) cls = "badge badge-error badge-outline";
+  else cls = "badge badge-error";
+  return `<span class="${cls}">${score}</span>`;
 }
 
 /**
@@ -41,29 +40,29 @@ function healthBadge(score) {
  */
 function renderRow(repo, meta) {
   const topics = (repo.topics || [])
-    .map(t => `<span class="inline-block bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded px-1.5 py-0.5 text-xs mb-0.5">${esc(t)}</span>`)
+    .map(t => `<span class="badge badge-outline badge-info mb-0.5">${esc(t)}</span>`)
     .join(" ");
 
   const languagesHtml = (meta.languages && meta.languages.length > 0)
     ? meta.languages.map(l => {
         const pct = meta.languagePercentages?.[l];
         const label = pct != null ? `${esc(l)}/${pct}%` : esc(l);
-        return `<span class="inline-block bg-slate-700 border border-slate-600 rounded px-2 py-0.5 text-xs mb-0.5">${label}</span>`;
+        return `<span class="badge badge-neutral mb-0.5">${label}</span>`;
       }).join(" ")
     : repo.language
-      ? `<span class="inline-block bg-slate-700 border border-slate-600 rounded px-2 py-0.5 text-xs">${esc(repo.language)}</span>`
+      ? `<span class="badge badge-neutral">${esc(repo.language)}</span>`
       : "–";
 
-  const tdBase = "py-3 px-4 align-top border-t border-slate-700 group-hover:bg-slate-800/50";
+  const tdBase = "align-top group-hover:bg-base-200/50";
   const tdHidden = `hidden sm:table-cell ${tdBase}`;
 
   const cells = [
     `<td class="${tdBase}">
-       <a href="${esc(repo.html_url)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-blue-400 hover:underline">${esc(repo.name)}</a>
-       ${meta.angular ? `<div class="text-xs text-slate-500 mt-0.5 sm:hidden">Angular ${esc(meta.angular)}</div>` : ""}
-       ${meta.nodeVersion ? `<div class="text-xs text-slate-500 mt-0.5 sm:hidden">Node.js ${esc(meta.nodeVersion)}</div>` : ""}
-       ${repo.language ? `<div class="text-xs text-slate-500 mt-0.5 sm:hidden" aria-hidden="true">${esc(repo.language)}</div>` : ""}
-       ${repo.description ? `<div class="text-xs text-slate-400 mt-0.5 max-w-xs hidden sm:block">${esc(repo.description)}</div>` : ""}
+       <a href="${esc(repo.html_url)}" target="_blank" rel="noopener noreferrer" class="font-semibold link link-primary">${esc(repo.name)}</a>
+       ${meta.angular ? `<div class="text-xs opacity-50 mt-0.5 sm:hidden">Angular ${esc(meta.angular)}</div>` : ""}
+       ${meta.nodeVersion ? `<div class="text-xs opacity-50 mt-0.5 sm:hidden">Node.js ${esc(meta.nodeVersion)}</div>` : ""}
+       ${repo.language ? `<div class="text-xs opacity-50 mt-0.5 sm:hidden" aria-hidden="true">${esc(repo.language)}</div>` : ""}
+       ${repo.description ? `<div class="text-xs opacity-60 mt-0.5 max-w-xs hidden sm:block">${esc(repo.description)}</div>` : ""}
      </td>`,
     `<td class="${tdHidden}">${languagesHtml}</td>`,
     `<td class="${tdBase}">${repo.stargazers_count}</td>`,
@@ -90,10 +89,8 @@ function renderKpis(stats) {
     return `
       <div class="flex items-center gap-2 mb-1.5">
         <span class="w-20 text-xs truncate">${esc(lang)}</span>
-        <div class="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
-          <div class="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full" style="width:${pct}%"></div>
-        </div>
-        <span class="text-xs text-slate-400 w-6 text-right">${count}</span>
+        <progress class="progress progress-secondary flex-1" value="${pct}" max="100"></progress>
+        <span class="text-xs opacity-60 w-6 text-right">${count}</span>
       </div>`;
   }).join("");
 
@@ -102,42 +99,51 @@ function renderKpis(stats) {
     return `
       <div class="flex items-center gap-2 mb-1.5">
         <span class="w-20 text-xs truncate">${esc(lang)}</span>
-        <div class="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
-          <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style="width:${pct}%"></div>
-        </div>
-        <span class="text-xs text-slate-400 whitespace-nowrap" aria-label="${count} of ${stats.totalRepos} repos">${count}/${stats.totalRepos}</span>
+        <progress class="progress progress-primary flex-1" value="${pct}" max="100"></progress>
+        <span class="text-xs opacity-60 whitespace-nowrap" aria-label="${count} of ${stats.totalRepos} repos">${count}/${stats.totalRepos}</span>
       </div>`;
   }).join("");
 
-  const cardClass = "bg-slate-800 border border-slate-700 rounded-xl p-5";
+  const cardClass = "card bg-base-200 shadow-sm";
+  const kpiLabel = "text-xs uppercase tracking-wider opacity-60";
 
   return `
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
       <div class="${cardClass}">
-        <div class="text-4xl font-bold leading-none mb-1">${stats.totalRepos}</div>
-        <div class="text-xs uppercase tracking-wider text-slate-400">Repositories</div>
+        <div class="card-body p-5">
+          <div class="text-4xl font-bold leading-none mb-1">${stats.totalRepos}</div>
+          <p class="${kpiLabel}">Repositories</p>
+        </div>
       </div>
       <div class="${cardClass}">
-        <div class="text-4xl font-bold leading-none mb-1">${stats.totalStars}</div>
-        <div class="text-xs uppercase tracking-wider text-slate-400">Total Stars</div>
+        <div class="card-body p-5">
+          <div class="text-4xl font-bold leading-none mb-1">${stats.totalStars}</div>
+          <p class="${kpiLabel}">Total Stars</p>
+        </div>
       </div>
       <div class="${cardClass}">
-        <div class="text-4xl font-bold leading-none mb-1">${stats.avgHealth}<span class="text-base font-normal text-slate-400">/100</span></div>
-        <div class="text-xs uppercase tracking-wider text-slate-400">Avg. Health Score</div>
+        <div class="card-body p-5">
+          <div class="text-4xl font-bold leading-none mb-1">${stats.avgHealth}<span class="text-base font-normal opacity-60">/100</span></div>
+          <p class="${kpiLabel}">Avg. Health Score</p>
+        </div>
       </div>
       <div class="${cardClass}">
-        <div class="text-xs uppercase tracking-wider text-slate-400 mb-3">🏷️ Primary Languages</div>
-        ${primaryLangBars}
+        <div class="card-body p-5">
+          <p class="${kpiLabel} mb-3">🏷️ Primary Languages</p>
+          ${primaryLangBars}
+        </div>
       </div>
       <div class="${cardClass}">
-        <div class="text-xs uppercase tracking-wider text-slate-400 mb-3">📊 Language Usage</div>
-        ${langUsageBars}
+        <div class="card-body p-5">
+          <p class="${kpiLabel} mb-3">📊 Language Usage</p>
+          ${langUsageBars}
+        </div>
       </div>
     </div>`;
 }
 
-const TH_BASE = "py-3 px-4 text-left text-xs uppercase tracking-wider text-slate-400 whitespace-nowrap cursor-pointer select-none hover:text-slate-200 transition-colors";
-const TH_SORTED = "py-3 px-4 text-left text-xs uppercase tracking-wider text-blue-400 whitespace-nowrap cursor-pointer select-none hover:text-blue-300 transition-colors";
+const TH_BASE = "whitespace-nowrap cursor-pointer select-none opacity-60 hover:opacity-100 transition-opacity";
+const TH_SORTED = "whitespace-nowrap cursor-pointer select-none text-primary";
 const TH_HIDDEN = `hidden sm:table-cell ${TH_BASE}`;
 const TH_HIDDEN_SORTED = `hidden sm:table-cell ${TH_SORTED}`;
 
@@ -231,34 +237,32 @@ export function generateDashboard(analyzed, stats, generatedAt) {
   const rows = analyzed.map(({ repo, meta }) => renderRow(repo, meta)).join("\n");
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inpercima – Developer Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" />
   <script src="https://cdn.tailwindcss.com"><\/script>
-  <script>
-    tailwind.config = { darkMode: 'media' }
-  <\/script>
 </head>
-<body class="bg-slate-950 text-slate-200 min-h-screen text-sm">
+<body class="bg-base-100 text-base-content min-h-screen text-sm">
 <div class="max-w-screen-2xl mx-auto px-6 py-12">
 
   <header class="mb-8">
     <h1 class="text-4xl font-bold mb-1">Inpercima</h1>
-    <p class="text-slate-400 text-sm">Developer Dashboard &mdash; Auto-generated from GitHub API &middot; ${esc(generatedAt)}</p>
+    <p class="opacity-60 text-sm">Developer Dashboard &mdash; Auto-generated from GitHub API &middot; ${esc(generatedAt)}</p>
   </header>
 
   ${renderKpis(stats)}
 
   <div class="flex gap-3 mb-5 flex-wrap">
     <input id="searchInput" type="text" placeholder="Filter by name or topic…" aria-label="Filter repositories"
-      class="flex-1 min-w-[200px] max-w-sm px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 transition-colors" />
+      class="input input-bordered input-sm flex-1 min-w-[200px] max-w-sm" />
   </div>
 
-  <div class="overflow-x-auto border border-slate-700 rounded-xl">
-    <table class="w-full border-collapse">
-      <thead class="bg-slate-800/50">
+  <div class="overflow-x-auto border border-base-300 rounded-xl">
+    <table class="table">
+      <thead>
         <tr>
           <th class="${TH_BASE}" data-col="0">Repository</th>
           <th class="${TH_HIDDEN}" data-col="1">Language</th>
@@ -276,12 +280,12 @@ export function generateDashboard(analyzed, stats, generatedAt) {
         ${rows}
       </tbody>
     </table>
-    <div id="noResults" class="text-center py-12 text-slate-400" style="display:none">No repositories match your filter.</div>
+    <div id="noResults" class="text-center py-12 opacity-60" style="display:none">No repositories match your filter.</div>
   </div>
 
-  <footer class="mt-8 text-center text-xs text-slate-400">
+  <footer class="mt-8 text-center text-xs opacity-60">
     Generated on ${esc(generatedAt)} &middot;
-    <a href="https://github.com/inpercima" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline">github.com/inpercima</a>
+    <a href="https://github.com/inpercima" target="_blank" rel="noopener noreferrer" class="link link-primary">github.com/inpercima</a>
   </footer>
 
 </div>
