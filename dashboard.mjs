@@ -10,8 +10,9 @@
  *   GITHUB_TOKEN=ghp_... node dashboard.mjs
  */
 
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { execSync } from "node:child_process";
 import { fetchRepos } from "./src/api.mjs";
 import { analyzeRepo, aggregateStats } from "./src/analyzer.mjs";
 import { generateDashboard, generateReadme } from "./src/generator.mjs";
@@ -19,6 +20,7 @@ import { generateDashboard, generateReadme } from "./src/generator.mjs";
 const USERNAME = "inpercima";
 const OUT_DIR = "dist";
 const OUT_FILE = join(OUT_DIR, "index.html");
+const CSS_FILE = join(OUT_DIR, "tailwind.css");
 const README_FILE = "README.md";
 const TOKEN = process.env.GITHUB_TOKEN;
 
@@ -38,11 +40,16 @@ async function main() {
   const stats = aggregateStats(analysisResults);
   const generatedAt = new Date().toISOString().split("T")[0];
 
+  await mkdir(OUT_DIR, { recursive: true });
+
+  console.log("Building Tailwind CSS…");
+  execSync("npm run build:css", { stdio: "inherit" });
+  const css = await readFile(CSS_FILE, "utf-8");
+
   console.log(`Generating dashboard…`);
-  const html = generateDashboard(analysisResults, stats, generatedAt);
+  const html = generateDashboard(analysisResults, stats, generatedAt, css);
   const readme = generateReadme(analysisResults, stats, generatedAt);
 
-  await mkdir(OUT_DIR, { recursive: true });
   await writeFile(OUT_FILE, html, "utf-8");
   await writeFile(README_FILE, readme, "utf-8");
 

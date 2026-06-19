@@ -1,6 +1,6 @@
 /**
  * HTML/CSS/JS dashboard generator.
- * Styling uses Tailwind CSS (CDN) utility classes.
+ * Styling uses Tailwind CSS (build) utility classes.
  */
 
 /**
@@ -225,9 +225,10 @@ ${top5Rows}
  * @param {Array<{repo: object, meta: object}>} analyzed  Sorted list of repos + meta
  * @param {object} stats  Aggregated KPI stats
  * @param {string} generatedAt  ISO date string
+ * @param {string} css  Compiled Tailwind CSS string to inline into the HTML
  * @returns {string}
  */
-export function generateDashboard(analyzed, stats, generatedAt) {
+export function generateDashboard(analyzed, stats, generatedAt, css) {
   const rows = analyzed.map(({ repo, meta }) => renderRow(repo, meta)).join("\n");
 
   return `<!DOCTYPE html>
@@ -236,10 +237,7 @@ export function generateDashboard(analyzed, stats, generatedAt) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inpercima – Developer Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"><\/script>
-  <script>
-    tailwind.config = { darkMode: 'media' }
-  <\/script>
+  <style>${css}<\/style>
 </head>
 <body class="bg-slate-950 text-slate-200 min-h-screen text-sm">
 <div class="max-w-screen-2xl mx-auto px-6 py-12">
