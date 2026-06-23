@@ -34,8 +34,8 @@
 
 | Repository | Language | Stars | Health |
 | ---------- | -------- | :---: | :----: |
-| [mittagstisch](https://github.com/inpercima/mittagstisch) | Java | ⭐ 1 | 🟢 97 |
+| [mittagstisch](https://github.com/inpercima/mittagstisch) | Java | ⭐ 1 | 🟢 95 |
 | [davengo-results](https://github.com/inpercima/davengo-results) | TypeScript | ⭐ 0 | 🟢 86 |
-| [explore-tmdb](https://github.com/inpercima/explore-tmdb) | TypeScript | ⭐ 0 | 🟢 86 |
-| [mc-status](https://github.com/inpercima/mc-status) | TypeScript | ⭐ 0 | 🟢 84 |
-| [publicmedia](https://github.com/inpercima/publicmedia) | TypeScript | ⭐ 6 | 🟢 82 |
+| [explore-tmdb](https://github.com/inpercima/explore-tmdb) | TypeScript | ⭐ 0 | 🟢 84 |
+| [mc-status](https://github.com/inpercima/mc-status) | TypeScript | ⭐ 0 | 🟢 82 |
+| [publicmedia](https://github.com/inpercima/publicmedia) | TypeScript | ⭐ 6 | 🟢 80 |
