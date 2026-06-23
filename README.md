@@ -1,6 +1,6 @@
 # 📊 Developer Dashboard
 
-> 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **2026-06-22**
+> 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **2026-06-23**
 >
 > 🔗 [View Full Dashboard](https://inpercima.github.io/inpercima)
 
@@ -24,8 +24,8 @@
 
 | Language | Distribution | Repos |
 | -------- | ------------ | ----- |
+| JavaScript | ███████████████░░░░░ | 18 of 24 repos (75%) |
 | HTML | ██████████████░░░░░░ | 17 of 24 repos (71%) |
-| JavaScript | ██████████████░░░░░░ | 17 of 24 repos (71%) |
 | TypeScript | █████████████░░░░░░░ | 16 of 24 repos (67%) |
 | CSS | █████████████░░░░░░░ | 16 of 24 repos (67%) |
 | SCSS | ██████████░░░░░░░░░░ | 12 of 24 repos (50%) |
