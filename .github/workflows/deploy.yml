@@ -20,10 +20,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Set up Node.js with 24.14
+      - name: Set up Node.js with 24
         uses: actions/setup-node@v6
         with:
-          node-version: 24.14
+          node-version: 24
 
       - name: Generate dashboard
         run: node dashboard.mjs

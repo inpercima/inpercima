@@ -4,6 +4,6 @@
   "description": "Developer dashboard for inpercima GitHub repositories",
   "type": "module",
   "engines": {
-    "node": ">=24.14.0"
+    "node": ">=24.16.0"
   }
 }

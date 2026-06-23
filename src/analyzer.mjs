@@ -110,8 +110,8 @@ export function calculateHealthScore(repo, meta) {
   // angular version (up to 4 points)
   if (meta.angular) {
     const major = parseInt(meta.angular.split('.')[0]);
-    if (major >= 21) score += 4;
-    else if (major >= 20) score += 2;
+    if (major >= 22) score += 4;
+    else if (major >= 21) score += 2;
   }
 
   // Has topics/tags (10 points)
