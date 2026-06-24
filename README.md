@@ -1,6 +1,6 @@
 # 📊 Developer Dashboard
 
-> 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **2026-06-23**
+> 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **2026-06-24**
 >
 > 🔗 [View Full Dashboard](https://inpercima.github.io/inpercima)
 
@@ -8,7 +8,7 @@
 
 | 🗂️ Repositories | ⭐ Total Stars | 💚 Avg. Health Score |
 | :-: | :-: | :-: |
-| **24** | **19** | **63 / 100** |
+| **24** | **19** | **62 / 100** |
 
 ## 🏷️ Primary Languages
 
@@ -37,5 +37,5 @@
 | [mittagstisch](https://github.com/inpercima/mittagstisch) | Java | ⭐ 1 | 🟢 95 |
 | [davengo-results](https://github.com/inpercima/davengo-results) | TypeScript | ⭐ 0 | 🟢 86 |
 | [explore-tmdb](https://github.com/inpercima/explore-tmdb) | TypeScript | ⭐ 0 | 🟢 84 |
-| [mc-status](https://github.com/inpercima/mc-status) | TypeScript | ⭐ 0 | 🟢 82 |
 | [publicmedia](https://github.com/inpercima/publicmedia) | TypeScript | ⭐ 6 | 🟢 80 |
+| [covid-19](https://github.com/inpercima/covid-19) | TypeScript | ⭐ 4 | 🟡 74 |
