@@ -1,6 +1,6 @@
 # 📊 Developer Dashboard
 
-> 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **2026-07-26**
+> 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **2026-07-27**
 >
 > 🔗 [View Full Dashboard](https://inpercima.github.io/inpercima)
 
@@ -8,7 +8,7 @@
 
 | 🗂️ Repositories | ⭐ Total Stars | 💚 Avg. Health Score |
 | :-: | :-: | :-: |
-| **24** | **20** | **62 / 100** |
+| **24** | **20** | **63 / 100** |
 
 ## 🏷️ Primary Languages
 
@@ -38,4 +38,4 @@
 | [davengo-results](https://github.com/inpercima/davengo-results) | TypeScript | ⭐ 0 | 🟢 96 |
 | [mc-status](https://github.com/inpercima/mc-status) | TypeScript | ⭐ 0 | 🟢 96 |
 | [mdrza-ranking](https://github.com/inpercima/mdrza-ranking) | TypeScript | ⭐ 0 | 🟢 96 |
-| [explore-tmdb](https://github.com/inpercima/explore-tmdb) | TypeScript | ⭐ 0 | 🟡 74 |
+| [explore-tmdb](https://github.com/inpercima/explore-tmdb) | TypeScript | ⭐ 0 | 🟢 94 |
