@@ -1,8 +1,8 @@
 # 📊 Developer Dashboard
 
-| 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **2026-09-28**
-|
-| 🔗 [View Full Dashboard](https://inpercima.github.io/inpercima)
+> 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **2026-09-28**
+>
+> 🔗 [View Full Dashboard](https://inpercima.github.io/inpercima)
 
 ## 🔢 KPIs
 
