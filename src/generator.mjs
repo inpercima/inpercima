@@ -190,9 +190,9 @@ export function generateReadme(analyzed, stats, generatedAt) {
 
   return `# 📊 Developer Dashboard
 
-| 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **${generatedAt}**
-|
-| 🔗 [View Full Dashboard](https://inpercima.github.io/inpercima)
+> 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **${generatedAt}**
+>
+> 🔗 [View Full Dashboard](https://inpercima.github.io/inpercima)
 
 ## 🔢 KPIs
 
