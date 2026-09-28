@@ -72,7 +72,7 @@ function renderRow(repo, meta) {
     `<td class="${tdHidden}">${meta.mavenVersion ? esc(meta.mavenVersion) : "–"}</td>`,
     `<td class="${tdHidden}">${meta.nodeVersion ? esc(meta.nodeVersion) : "–"}</td>`,
     `<td class="${tdHidden}">${meta.pnpmVersion ? esc(meta.pnpmVersion) : "–"}</td>`,
-    `<td class="${tdHidden}">${meta.javaFramework ? esc(meta.javaFramework) : "–"}</td>`,
+    `<td class="${tdHidden}">${meta.otherFramework ? esc(meta.otherFramework) : "–"}</td>`,
     `<td class="${tdBase}">${healthBadge(meta.healthScore)}</td>`,
   ];
 
@@ -190,9 +190,9 @@ export function generateReadme(analyzed, stats, generatedAt) {
 
   return `# 📊 Developer Dashboard
 
-> 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **${generatedAt}**
->
-> 🔗 [View Full Dashboard](https://inpercima.github.io/inpercima)
+| 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **${generatedAt}**
+|
+| 🔗 [View Full Dashboard](https://inpercima.github.io/inpercima)
 
 ## 🔢 KPIs
 
@@ -268,7 +268,7 @@ export function generateDashboard(analyzed, stats, generatedAt) {
           <th class="${TH_HIDDEN}" data-col="5">Maven</th>
           <th class="${TH_HIDDEN}" data-col="6">Node.js</th>
           <th class="${TH_HIDDEN}" data-col="7">pnpm</th>
-          <th class="${TH_HIDDEN}" data-col="8">Java FW</th>
+          <th class="${TH_HIDDEN}" data-col="8">Weitere FW</th>
           <th class="${TH_BASE}" data-col="9">Health</th>
         </tr>
       </thead>
