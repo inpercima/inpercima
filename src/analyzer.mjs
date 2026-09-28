@@ -142,7 +142,7 @@ export async function analyzeRepo(username, repo, token) {
     nodeVersion: null,
     pnpmVersion: null,
     mavenVersion: null,
-    javaFramework: null,
+    otherFramework: null,
     languages: [],
     languagePercentages: {},
   };
@@ -158,6 +158,7 @@ export async function analyzeRepo(username, repo, token) {
     readmeText,
     nodeCi,
     javaCi,
+    phpConfig,
     languagesData,
   ] = await Promise.all([
     fetchFileContent(username, name, 'package.json', token),
@@ -169,6 +170,7 @@ export async function analyzeRepo(username, repo, token) {
     fetchFileContent(username, name, 'README.md', token),
     fetchFileContent(username, name, '.github/workflows/node_ci.yml', token),
     fetchFileContent(username, name, '.github/workflows/java_ci.yaml', token),
+    fetchFileContent(username, name, 'api/config/config.default.php', token),
     fetchLanguages(username, name, token),
   ]);
 
@@ -215,7 +217,12 @@ export async function analyzeRepo(username, repo, token) {
     if (!meta.mavenVersion) {
       meta.mavenVersion = detectMavenVersion(pomXml);
     }
-    meta.javaFramework = detectJavaFramework(pomXml);
+    meta.otherFramework = detectJavaFramework(pomXml);
+  }
+
+  // PHP detection takes precedence if the marker config file exists.
+  if (phpConfig !== null) {
+    meta.otherFramework = 'PHP';
   }
 
   meta.healthScore = calculateHealthScore(repo, meta);
