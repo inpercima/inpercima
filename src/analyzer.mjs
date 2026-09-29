@@ -5,6 +5,60 @@
 import { fetchFileContent, fetchLanguages } from './api.mjs';
 
 /**
+ * Central policy for version-based scoring. Each entry is an ordered list of
+ * `[minimumVersion, score]` pairs (checked from highest to lowest). Adjust
+ * these thresholds to tune scoring without touching the scoring logic.
+ */
+const VERSION_POLICIES = {
+  node: [
+    [24, 100],
+    [22, 90],
+    [20, 75],
+    [18, 50],
+  ],
+  angular: [
+    [20, 100],
+    [18, 85],
+    [16, 70],
+  ],
+  maven: [
+    [3.9, 100],
+    [3.8, 85],
+    [3.6, 70],
+  ],
+  java: [
+    [21, 100],
+    [17, 85],
+    [11, 70],
+  ],
+};
+
+/**
+ * Score a version string against a named version policy.
+ * Distinguishes an absent version (no version supplied) from a present but
+ * unparsable/malformed one, so callers can tell the two situations apart.
+ * @param {string|null|undefined} version
+ * @param {keyof typeof VERSION_POLICIES} policyKey
+ * @param {{missingScore?: number, invalidScore?: number, fallbackScore?: number}} [options]
+ * @returns {number} 0-100
+ */
+function scoreVersion(version, policyKey, options = {}) {
+  const { missingScore = 0, invalidScore = 40, fallbackScore = 25 } = options;
+
+  if (!version) return missingScore;
+
+  const match = String(version).match(/\d+(?:\.\d+)?/);
+  const parsed = match ? parseFloat(match[0]) : NaN;
+  if (Number.isNaN(parsed)) return invalidScore;
+
+  const thresholds = VERSION_POLICIES[policyKey] ?? [];
+  for (const [min, score] of thresholds) {
+    if (parsed >= min) return score;
+  }
+  return fallbackScore;
+}
+
+/**
  * Extract Angular version from package.json content.
  * @param {object} pkg
  * @returns {string|null}
@@ -17,6 +71,16 @@ function detectAngular(pkg) {
 }
 
 /**
+ * Detect whether Angular CLI/build tooling is configured in package.json.
+ * @param {object} pkg
+ * @returns {boolean}
+ */
+function detectAngularTooling(pkg) {
+  const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+  return Boolean(deps?.['@angular/cli'] || deps?.['@angular-devkit/build-angular']);
+}
+
+/**
  * Extract Node.js engine requirement from package.json content.
  * @param {object} pkg
  * @returns {string|null}
@@ -25,6 +89,15 @@ function detectNodeVersion(pkg) {
   const version = pkg?.engines?.node;
   if (!version) return null;
   return version.replace(/[\^~>=<]/g, '').replace('>=', '').trim();
+}
+
+/**
+ * Detect whether package.json declares any useful npm scripts.
+ * @param {object} pkg
+ * @returns {boolean}
+ */
+function detectPackageScripts(pkg) {
+  return Boolean(pkg?.scripts && Object.keys(pkg.scripts).length > 0);
 }
 
 /**
@@ -77,53 +150,248 @@ function detectJavaFramework(content) {
 }
 
 /**
- * Calculate a health score (0–100) for a repository based on several signals.
+ * Extract the configured Java language level from pom.xml content.
+ * @param {string} pomXml
+ * @returns {string|null}
+ */
+function detectJavaVersion(pomXml) {
+  const match =
+    pomXml.match(/<java\.version>(.*?)<\/java\.version>/) ||
+    pomXml.match(/<maven\.compiler\.release>(.*?)<\/maven\.compiler\.release>/) ||
+    pomXml.match(/<maven\.compiler\.source>(.*?)<\/maven\.compiler\.source>/);
+  if (match) return match[1].trim();
+  return null;
+}
+
+/**
+ * Detect whether pom.xml defines a <dependencyManagement> section.
+ * @param {string} pomXml
+ * @returns {boolean}
+ */
+function detectDependencyManagement(pomXml) {
+  return /<dependencyManagement>/.test(pomXml);
+}
+
+/**
+ * Calculate the weighted average score for a list of criteria.
+ * Only criteria marked `applicable` contribute to the result. Each
+ * criterion's `contribution` (score * weight) is recorded for transparency.
+ * @param {Array<object>} criteria
+ * @returns {number} 0-100 integer
+ */
+function calculateWeightedScore(criteria) {
+  const applicableCriteria = criteria.filter(criterion => criterion.applicable);
+  const totalWeight = applicableCriteria.reduce((sum, criterion) => sum + criterion.weight, 0);
+
+  if (totalWeight === 0) return 0;
+
+  const weightedScore = applicableCriteria.reduce((sum, criterion) => sum + criterion.score * criterion.weight, 0);
+
+  const score = weightedScore / totalWeight;
+  return Math.min(100, Math.max(0, Math.round(score)));
+}
+
+/**
+ * Build the criteria that apply to (almost) every repository, regardless of
+ * technology stack.
+ * @param {object} repo
+ * @param {object} meta
+ * @returns {Array<object>}
+ */
+function buildGeneralCriteria(repo, meta) {
+  const daysSinceUpdate = (Date.now() - new Date(repo.pushed_at).getTime()) / (1000 * 60 * 60 * 24);
+  let activityScore = 0;
+  if (daysSinceUpdate < 30) activityScore = 100;
+  else if (daysSinceUpdate < 90) activityScore = 70;
+  else if (daysSinceUpdate < 180) activityScore = 40;
+  else if (daysSinceUpdate < 365) activityScore = 15;
+
+  return [
+    {
+      id: 'activity',
+      category: 'general',
+      label: 'Recent activity',
+      applicable: true,
+      score: activityScore,
+      weight: 25,
+    },
+    {
+      id: 'description',
+      category: 'general',
+      label: 'Description',
+      applicable: true,
+      score: repo.description ? 100 : 0,
+      weight: 10,
+    },
+    {
+      id: 'readme',
+      category: 'general',
+      label: 'README',
+      applicable: true,
+      score: meta.hasReadme ? 100 : 0,
+      weight: 10,
+    },
+    {
+      id: 'ci',
+      category: 'general',
+      label: 'CI/CD',
+      applicable: true,
+      score: meta.hasCI ? 100 : 0,
+      weight: 20,
+    },
+    {
+      id: 'license',
+      category: 'general',
+      label: 'License',
+      applicable: true,
+      score: repo.license ? 100 : 0,
+      weight: 10,
+    },
+    {
+      id: 'topics',
+      category: 'general',
+      label: 'Topics',
+      applicable: true,
+      score: repo.topics && repo.topics.length > 0 ? 100 : 0,
+      weight: 10,
+    },
+    {
+      id: 'community',
+      category: 'general',
+      label: 'Community signal (stars)',
+      applicable: true,
+      score: Math.min(100, (repo.stargazers_count ?? 0) * 10),
+      weight: 5,
+    },
+  ];
+}
+
+/**
+ * Build the criteria for technologies actually detected in the repository.
+ * A criterion is only included (marked `applicable`) when its technology was
+ * detected; otherwise it is entirely excluded from the score calculation.
+ * @param {object} meta
+ * @returns {Array<object>}
+ */
+function buildTechnologyCriteria(meta) {
+  const { technologies } = meta;
+
+  return [
+    {
+      id: 'node-version',
+      category: 'node',
+      label: 'Node.js version',
+      applicable: technologies.node,
+      score: technologies.node ? scoreVersion(meta.nodeVersion, 'node') : null,
+      weight: 15,
+    },
+    {
+      id: 'node-scripts',
+      category: 'node',
+      label: 'npm scripts configured',
+      applicable: technologies.node,
+      score: technologies.node ? (meta.hasPackageScripts ? 100 : 0) : null,
+      weight: 5,
+    },
+    {
+      id: 'angular-version',
+      category: 'angular',
+      label: 'Angular version',
+      applicable: technologies.angular,
+      score: technologies.angular ? scoreVersion(meta.angular, 'angular') : null,
+      weight: 15,
+    },
+    {
+      id: 'angular-tooling',
+      category: 'angular',
+      label: 'Angular CLI/build tooling',
+      applicable: technologies.angular,
+      score: technologies.angular ? (meta.hasAngularTooling ? 100 : 0) : null,
+      weight: 5,
+    },
+    {
+      id: 'maven-version',
+      category: 'maven',
+      label: 'Maven version',
+      applicable: technologies.maven,
+      score: technologies.maven ? scoreVersion(meta.mavenVersion, 'maven') : null,
+      weight: 15,
+    },
+    {
+      id: 'maven-dependency-management',
+      category: 'maven',
+      label: 'Dependency management configured',
+      applicable: technologies.maven,
+      score: technologies.maven ? (meta.hasDependencyManagement ? 100 : 0) : null,
+      weight: 5,
+    },
+    {
+      id: 'java-version',
+      category: 'java',
+      label: 'Java version',
+      applicable: technologies.java,
+      score: technologies.java ? scoreVersion(meta.javaVersion, 'java') : null,
+      weight: 15,
+    },
+    {
+      id: 'java-build-config',
+      category: 'java',
+      label: 'Java build configuration',
+      applicable: technologies.java,
+      score: technologies.java ? (meta.hasJavaCI || meta.otherFramework ? 100 : 0) : null,
+      weight: 5,
+    },
+    {
+      id: 'php-config',
+      category: 'php',
+      label: 'PHP configuration',
+      applicable: technologies.php,
+      score: technologies.php ? 100 : null,
+      weight: 10,
+    },
+  ];
+}
+
+/**
+ * Detect which technologies are actually present in the repository, based on
+ * metadata gathered from already-fetched files. Only technologies detected
+ * here contribute technology-specific criteria to the health score – absent
+ * technologies never penalize the score.
+ * @param {object} meta
+ * @returns {Record<string, boolean>}
+ */
+function detectTechnologies(meta) {
+  return {
+    node: meta.hasPackageJson,
+    angular: meta.angular !== null,
+    maven: meta.hasMavenConfig,
+    java: meta.hasMavenConfig, // Java is currently detected via Maven build files (pom.xml)
+    php: meta.otherFramework === 'PHP',
+  };
+}
+
+/**
+ * Calculate a health score (0–100) for a repository based on several
+ * signals. Only criteria relevant to the technologies actually present in
+ * the repository are considered, so e.g. a pure JavaScript project is not
+ * penalized for lacking Angular, Maven or Java.
  * @param {object} repo  Raw GitHub repo object
  * @param {object} meta  Derived metadata (hasCI, hasReadme, etc.)
- * @returns {number}
+ * @returns {{score: number, technologies: Record<string, boolean>, criteria: Array<object>}}
  */
 export function calculateHealthScore(repo, meta) {
-  let score = 0;
+  const technologies = detectTechnologies(meta);
 
-  // Recent activity (up to 30 points)
-  const daysSinceUpdate = (Date.now() - new Date(repo.pushed_at).getTime()) / (1000 * 60 * 60 * 24);
-  if (daysSinceUpdate < 30) score += 30;
-  else if (daysSinceUpdate < 90) score += 20;
-  else if (daysSinceUpdate < 180) score += 10;
-  else if (daysSinceUpdate < 365) score += 5;
+  const criteria = [...buildGeneralCriteria(repo, meta), ...buildTechnologyCriteria({ ...meta, technologies })].map(
+    criterion => ({
+      ...criterion,
+      contribution: criterion.applicable ? criterion.score * criterion.weight : 0,
+    }),
+  );
 
-  // Description present (10 points)
-  if (repo.description) score += 10;
+  const score = calculateWeightedScore(criteria);
 
-  // README present (10 points)
-  if (meta.hasReadme) score += 10;
-
-  // CI/CD setup (20 points)
-  if (meta.hasCI) score += 20;
-
-  // node version >= 24 (2 points)
-  if (meta.nodeVersion) {
-    const major = parseInt(meta.nodeVersion.split('.')[0]);
-    if (major >= 24) score += 2;
-  }
-
-  // angular version (up to 4 points)
-  if (meta.angular) {
-    const major = parseInt(meta.angular.split('.')[0]);
-    if (major >= 22) score += 4;
-    else if (major >= 21) score += 2;
-  }
-
-  // Has topics/tags (10 points)
-  if (repo.topics && repo.topics.length > 0) score += 10;
-
-  // Has license (10 points)
-  if (repo.license) score += 10;
-
-  // Stars as social proof (up to 10 points)
-  score += Math.min(repo.stargazers_count, 10);
-
-  return Math.min(score, 100);
+  return { score, technologies, criteria };
 }
 
 /**
@@ -138,10 +406,17 @@ export async function analyzeRepo(username, repo, token) {
   const meta = {
     hasReadme: false,
     hasCI: false,
+    hasJavaCI: false,
+    hasPackageJson: false,
+    hasPackageScripts: false,
+    hasAngularTooling: false,
+    hasMavenConfig: false,
+    hasDependencyManagement: false,
     angular: null,
     nodeVersion: null,
     pnpmVersion: null,
     mavenVersion: null,
+    javaVersion: null,
     otherFramework: null,
     languages: [],
     languagePercentages: {},
@@ -176,6 +451,7 @@ export async function analyzeRepo(username, repo, token) {
 
   meta.hasReadme = readmeText !== null;
   meta.hasCI = nodeCi !== null || javaCi !== null;
+  meta.hasJavaCI = javaCi !== null;
   meta.languages = Object.keys(languagesData).sort((a, b) => languagesData[b] - languagesData[a]);
   const totalBytes = Object.values(languagesData).reduce((sum, b) => sum + b, 0);
   meta.languagePercentages = {};
@@ -186,16 +462,20 @@ export async function analyzeRepo(username, repo, token) {
   }
 
   const packageJson = rootPackageJson || frontendPackageJson;
+  meta.hasPackageJson = packageJson !== null && packageJson !== undefined;
   if (packageJson) {
     try {
       const pkg = JSON.parse(packageJson);
       meta.angular = detectAngular(pkg);
       meta.nodeVersion = detectNodeVersion(pkg);
+      meta.hasPackageScripts = detectPackageScripts(pkg);
+      meta.hasAngularTooling = detectAngularTooling(pkg);
 
       if (meta.angular === null && frontendPackageJson !== null) {
         // If root package.json doesn't have Angular, check frontend one
         const frontendPkg = JSON.parse(frontendPackageJson);
         meta.angular = detectAngular(frontendPkg);
+        meta.hasAngularTooling = meta.hasAngularTooling || detectAngularTooling(frontendPkg);
       }
     } catch {
       // Malformed package.json – skip
@@ -213,10 +493,13 @@ export async function analyzeRepo(username, repo, token) {
   }
 
   const pomXml = rootPomXml || backendPomXml;
+  meta.hasMavenConfig = pomXml !== null && pomXml !== undefined || mavenWrapperProps !== null && mavenWrapperProps !== undefined;
   if (pomXml) {
     if (!meta.mavenVersion) {
       meta.mavenVersion = detectMavenVersion(pomXml);
     }
+    meta.javaVersion = detectJavaVersion(pomXml);
+    meta.hasDependencyManagement = detectDependencyManagement(pomXml);
     meta.otherFramework = detectJavaFramework(pomXml);
   }
 
@@ -225,7 +508,9 @@ export async function analyzeRepo(username, repo, token) {
     meta.otherFramework = 'PHP';
   }
 
-  meta.healthScore = calculateHealthScore(repo, meta);
+  const health = calculateHealthScore(repo, meta);
+  meta.healthScore = health.score;
+  meta.health = health;
 
   return { repo, meta };
 }
