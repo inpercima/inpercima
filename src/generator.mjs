@@ -251,7 +251,7 @@ The general criteria have a total weight of 90.
 | Java | Java version | Version policy below | 15 |
 | Java | Java build configuration | Java CI workflow or a recognized Java framework detected: 100; otherwise: 0 | 5 |
 
-Detection is based on repository metadata and configuration files: Node.js uses a root or \`frontend/package.json\`; Angular uses \`@angular/core\` in either package file; pnpm requires a version match such as \`pnpm@10.32.0\` in the README; PHP uses a matching root \`docker-compose.yml\` image or the \`api/config/config.default.php\` fallback. Maven and Java are both detected from a root/backend \`pom.xml\` or Maven wrapper. For Java build configuration, recognized frameworks are Spring Boot, Quarkus, Micronaut, and Helidon. Technology-specific criteria are excluded when detection returns false. In particular, pnpm is included only when its version is found in the README.
+Detection is based on repository metadata and configuration files: Node.js uses a root or \`frontend/package.json\`; Angular uses \`@angular/core\` in either package file; pnpm requires a version match in the README; PHP uses a matching root \`docker-compose.yml\` image or the \`api/config/config.default.php\` fallback. Maven and Java are both detected from a root/backend \`pom.xml\` or Maven wrapper. For Java build configuration, recognized frameworks are Spring Boot, Quarkus, Micronaut, and Helidon. Technology-specific criteria are excluded when detection returns false. In particular, pnpm is included only when its version is found in the README.
 
 Version policies award the score for the highest matching minimum version; a version below the lowest listed threshold scores 25:
 
