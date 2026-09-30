@@ -16,10 +16,22 @@ const VERSION_POLICIES = {
     [20, 75],
     [18, 50],
   ],
+  pnpm: [
+    [9, 100],
+    [8, 90],
+    [7, 75],
+    [6, 50],
+  ],
   angular: [
     [20, 100],
     [18, 85],
     [16, 70],
+  ],
+  php: [
+    [8.2, 100],
+    [8.1, 90],
+    [8.0, 75],
+    [7.4, 50],
   ],
   maven: [
     [3.9, 100],
@@ -108,6 +120,19 @@ function detectPackageScripts(pkg) {
  */
 function detectPnpmVersion(readmeText) {
   const match = readmeText.match(/pnpm@([\d.]+)/);
+  if (match) return match[1].trim();
+  return null;
+}
+
+/**
+ * Extract PHP version from docker-compose.yml content by looking for webdevops images.
+ * Searches for lines like:
+ *   image: webdevops/php-apache:8.2-alpine
+ * @param {string} dockerComposeContent
+ * @returns {string|null}
+ */
+function detectPhpVersionFromDockerCompose(dockerComposeContent) {
+  const match = dockerComposeContent.match(/webdevops\/php-\w+:([\d.]+)/);
   if (match) return match[1].trim();
   return null;
 }
@@ -294,6 +319,14 @@ function buildTechnologyCriteria(meta) {
       weight: 5,
     },
     {
+      id: 'pnpm-version',
+      category: 'pnpm',
+      label: 'pnpm version',
+      applicable: technologies.pnpm,
+      score: technologies.pnpm ? scoreVersion(meta.pnpmVersion, 'pnpm') : null,
+      weight: 10,
+    },
+    {
       id: 'angular-version',
       category: 'angular',
       label: 'Angular version',
@@ -307,6 +340,22 @@ function buildTechnologyCriteria(meta) {
       label: 'Angular CLI/build tooling',
       applicable: technologies.angular,
       score: technologies.angular ? (meta.hasAngularTooling ? 100 : 0) : null,
+      weight: 5,
+    },
+    {
+      id: 'php-version',
+      category: 'php',
+      label: 'PHP version',
+      applicable: technologies.php,
+      score: technologies.php ? scoreVersion(meta.phpVersion, 'php') : null,
+      weight: 15,
+    },
+    {
+      id: 'php-config',
+      category: 'php',
+      label: 'PHP configuration',
+      applicable: technologies.php,
+      score: technologies.php ? (meta.hasPhpConfig ? 100 : 0) : null,
       weight: 5,
     },
     {
@@ -341,14 +390,6 @@ function buildTechnologyCriteria(meta) {
       score: technologies.java ? (meta.hasJavaCI || meta.otherFramework ? 100 : 0) : null,
       weight: 5,
     },
-    {
-      id: 'php-config',
-      category: 'php',
-      label: 'PHP configuration',
-      applicable: technologies.php,
-      score: technologies.php ? 100 : null,
-      weight: 10,
-    },
   ];
 }
 
@@ -363,10 +404,11 @@ function buildTechnologyCriteria(meta) {
 function detectTechnologies(meta) {
   return {
     node: meta.hasPackageJson,
+    pnpm: meta.pnpmVersion !== null,
     angular: meta.angular !== null,
+    php: meta.phpVersion !== null,
     maven: meta.hasMavenConfig,
     java: meta.hasMavenConfig, // Java is currently detected via Maven build files (pom.xml)
-    php: meta.otherFramework === 'PHP',
   };
 }
 
@@ -412,9 +454,11 @@ export async function analyzeRepo(username, repo, token) {
     hasAngularTooling: false,
     hasMavenConfig: false,
     hasDependencyManagement: false,
+    hasPhpConfig: false,
     angular: null,
     nodeVersion: null,
     pnpmVersion: null,
+    phpVersion: null,
     mavenVersion: null,
     javaVersion: null,
     otherFramework: null,
@@ -434,6 +478,7 @@ export async function analyzeRepo(username, repo, token) {
     nodeCi,
     javaCi,
     phpConfig,
+    dockerCompose,
     languagesData,
   ] = await Promise.all([
     fetchFileContent(username, name, 'package.json', token),
@@ -446,6 +491,7 @@ export async function analyzeRepo(username, repo, token) {
     fetchFileContent(username, name, '.github/workflows/node_ci.yml', token),
     fetchFileContent(username, name, '.github/workflows/java_ci.yaml', token),
     fetchFileContent(username, name, 'api/config/config.default.php', token),
+    fetchFileContent(username, name, 'docker-compose.yml', token),
     fetchLanguages(username, name, token),
   ]);
 
@@ -503,9 +549,14 @@ export async function analyzeRepo(username, repo, token) {
     meta.otherFramework = detectJavaFramework(pomXml);
   }
 
-  // PHP detection takes precedence if the marker config file exists.
-  if (phpConfig !== null) {
-    meta.otherFramework = 'PHP';
+  // PHP detection: check docker-compose.yml first, then fallback to config file
+  if (dockerCompose !== null) {
+    meta.phpVersion = detectPhpVersionFromDockerCompose(dockerCompose);
+  }
+  meta.hasPhpConfig = phpConfig !== null;
+  if (meta.hasPhpConfig && !meta.phpVersion) {
+    // If we have PHP config but no version from docker-compose, mark as PHP detected
+    meta.phpVersion = 'unknown';
   }
 
   const health = calculateHealthScore(repo, meta);
