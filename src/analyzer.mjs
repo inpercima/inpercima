@@ -243,7 +243,7 @@ function buildGeneralCriteria(repo, meta) {
       label: 'Recent activity',
       applicable: true,
       score: activityScore,
-      weight: 25,
+      weight: 30,
     },
     {
       id: 'description',
@@ -284,14 +284,6 @@ function buildGeneralCriteria(repo, meta) {
       applicable: true,
       score: repo.topics && repo.topics.length > 0 ? 100 : 0,
       weight: 10,
-    },
-    {
-      id: 'community',
-      category: 'general',
-      label: 'Community signal (stars)',
-      applicable: true,
-      score: Math.min(100, (repo.stargazers_count ?? 0) * 10),
-      weight: 5,
     },
   ];
 }
