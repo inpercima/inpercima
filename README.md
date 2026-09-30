@@ -8,7 +8,7 @@
 
 | 🗂️ Repositories | ⭐ Total Stars | 💚 Avg. Health Score |
 | :-: | :-: | :-: |
-| **24** | **21** | **65 / 100** |
+| **24** | **21** | **67 / 100** |
 
 ## 🏷️ Primary Languages
 
@@ -34,11 +34,11 @@
 
 | Repository | Language | Stars | Health |
 | ---------- | -------- | :---: | :----: |
-| [davengo-results](https://github.com/inpercima/davengo-results) | TypeScript | ⭐ 0 | 🟢 95 |
-| [explore-tmdb](https://github.com/inpercima/explore-tmdb) | TypeScript | ⭐ 0 | 🟢 95 |
-| [mc-status](https://github.com/inpercima/mc-status) | TypeScript | ⭐ 0 | 🟢 95 |
-| [mdrza-ranking](https://github.com/inpercima/mdrza-ranking) | TypeScript | ⭐ 0 | 🟢 95 |
-| [mittagstisch](https://github.com/inpercima/mittagstisch) | Java | ⭐ 3 | 🟢 93 |
+| [davengo-results](https://github.com/inpercima/davengo-results) | TypeScript | ⭐ 0 | 🟢 98 |
+| [explore-tmdb](https://github.com/inpercima/explore-tmdb) | TypeScript | ⭐ 0 | 🟢 98 |
+| [mc-status](https://github.com/inpercima/mc-status) | TypeScript | ⭐ 0 | 🟢 98 |
+| [mdrza-ranking](https://github.com/inpercima/mdrza-ranking) | TypeScript | ⭐ 0 | 🟢 98 |
+| [mittagstisch](https://github.com/inpercima/mittagstisch) | Java | ⭐ 3 | 🟢 95 |
 
 ## 💚 Health Score Calculation
 
@@ -48,13 +48,12 @@ The health score is a weighted average from 0 to 100. Every repository receives 
 
 | Criterion | Scoring | Weight |
 | --------- | ------- | :----: |
-| Recent activity | Updated less than 30 days ago: 100; less than 90 days: 70; less than 180 days: 40; less than 365 days: 15; otherwise: 0 | 25 |
+| Recent activity | Updated less than 30 days ago: 100; less than 90 days: 70; less than 180 days: 40; less than 365 days: 15; otherwise: 0 | 30 |
 | CI/CD | Detected CI workflow: 100; otherwise: 0 | 20 |
 | Description | Present: 100; absent: 0 | 10 |
 | README | Present: 100; absent: 0 | 10 |
 | License | Present: 100; absent: 0 | 10 |
 | Topics | At least one: 100; none: 0 | 10 |
-| Community signal (stars) | The smaller of 100 and stars × 10 | 5 |
 
 The general criteria have a total weight of 90.
 
