@@ -34,8 +34,8 @@
 
 | Repository | Language | Stars | Health |
 | ---------- | -------- | :---: | :----: |
+| [explore-tmdb](https://github.com/inpercima/explore-tmdb) | TypeScript | ⭐ 0 | 🟢 97 |
+| [mdrza-ranking](https://github.com/inpercima/mdrza-ranking) | TypeScript | ⭐ 0 | 🟢 97 |
 | [davengo-results](https://github.com/inpercima/davengo-results) | TypeScript | ⭐ 0 | 🟢 96 |
-| [explore-tmdb](https://github.com/inpercima/explore-tmdb) | TypeScript | ⭐ 0 | 🟢 96 |
 | [mc-status](https://github.com/inpercima/mc-status) | TypeScript | ⭐ 0 | 🟢 96 |
-| [mdrza-ranking](https://github.com/inpercima/mdrza-ranking) | TypeScript | ⭐ 0 | 🟢 96 |
 | [mittagstisch](https://github.com/inpercima/mittagstisch) | Java | ⭐ 3 | 🟢 95 |
