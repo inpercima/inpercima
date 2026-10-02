@@ -68,11 +68,9 @@ function renderRow(repo, meta) {
     `<td class="${tdHidden}">${languagesHtml}</td>`,
     `<td class="${tdBase}">${repo.stargazers_count}</td>`,
     `<td class="${tdHidden}">${topics || "–"}</td>`,
-    `<td class="${tdHidden}">${meta.angular ? esc(meta.angular) : "–"}</td>`,
-    `<td class="${tdHidden}">${meta.mavenVersion ? esc(meta.mavenVersion) : "–"}</td>`,
     `<td class="${tdHidden}">${meta.nodeVersion ? esc(meta.nodeVersion) : "–"}</td>`,
     `<td class="${tdHidden}">${meta.pnpmVersion ? esc(meta.pnpmVersion) : "–"}</td>`,
-    `<td class="${tdHidden}">${meta.otherFramework ? esc(meta.otherFramework) : "–"}</td>`,
+    `<td class="${tdHidden}">${meta.frameworksLabel ? esc(meta.frameworksLabel) : "–"}</td>`,
     `<td class="${tdBase}">${healthBadge(meta.healthScore)}</td>`,
   ];
 
@@ -351,12 +349,10 @@ export function generateDashboard(analyzed, stats, generatedAt) {
           <th class="${TH_HIDDEN}" data-col="1">Language</th>
           <th class="${TH_SORTED}" data-col="2">Stars ▼</th>
           <th class="${TH_HIDDEN}" data-col="3">Topics</th>
-          <th class="${TH_HIDDEN}" data-col="4">Angular</th>
-          <th class="${TH_HIDDEN}" data-col="5">Maven</th>
-          <th class="${TH_HIDDEN}" data-col="6">Node.js</th>
-          <th class="${TH_HIDDEN}" data-col="7">pnpm</th>
-          <th class="${TH_HIDDEN}" data-col="8">Weitere FW</th>
-          <th class="${TH_BASE}" data-col="9">Health</th>
+          <th class="${TH_HIDDEN}" data-col="4">Node.js</th>
+          <th class="${TH_HIDDEN}" data-col="5">pnpm</th>
+          <th class="${TH_HIDDEN}" data-col="6">Frameworks</th>
+          <th class="${TH_BASE}" data-col="7">Health</th>
         </tr>
       </thead>
       <tbody id="repoBody">

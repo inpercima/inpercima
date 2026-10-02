@@ -130,15 +130,23 @@ function detectPnpmVersion(readmeText) {
 }
 
 /**
- * Extract PHP version from docker-compose.yml content by looking for webdevops images.
+ * Extract PHP version from docker-compose.yml content by looking for PHP images.
  * Searches for lines like:
  *   image: webdevops/php-apache:8.2-alpine
+ *   image: php:8.2-fpm
+ *   image: registry.example.com/php:8.3
  * @param {string} dockerComposeContent
  * @returns {string|null}
  */
 function detectPhpVersionFromDockerCompose(dockerComposeContent) {
-  const match = dockerComposeContent.match(/webdevops\/php-\w+:([\d.]+)/);
-  if (match) return match[1].trim();
+  const patterns = [
+    /webdevops\/php-\w+:([\d.]+)/i,
+    /(?:^|[\s/"'])php:([\d.]+)/im,
+  ];
+  for (const pattern of patterns) {
+    const match = dockerComposeContent.match(pattern);
+    if (match) return match[1].trim();
+  }
   return null;
 }
 
@@ -459,6 +467,8 @@ export async function analyzeRepo(username, repo, token) {
     mavenVersion: null,
     javaVersion: null,
     otherFramework: null,
+    frameworks: [],
+    frameworksLabel: '',
     languages: [],
     languagePercentages: {},
   };
@@ -555,6 +565,22 @@ export async function analyzeRepo(username, repo, token) {
     // If we have PHP config but no version from docker-compose, mark as PHP detected
     meta.phpVersion = 'unknown';
   }
+  if (!meta.phpVersion && meta.languages.includes('PHP')) {
+    meta.phpVersion = 'unknown';
+  }
+
+  if (meta.angular) {
+    meta.frameworks.push({ name: 'Angular', version: meta.angular });
+  }
+  if (meta.otherFramework) {
+    meta.frameworks.push({ name: meta.otherFramework, version: meta.javaVersion || meta.mavenVersion || null });
+  }
+  if (meta.phpVersion) {
+    meta.frameworks.push({ name: 'PHP', version: meta.phpVersion });
+  }
+  meta.frameworksLabel = meta.frameworks
+    .map(fw => (fw.version ? `${fw.name} (${fw.version})` : fw.name))
+    .join(', ');
 
   const health = calculateHealthScore(repo, meta);
   meta.healthScore = health.score;
