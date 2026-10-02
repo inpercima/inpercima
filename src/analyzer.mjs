@@ -392,7 +392,7 @@ function buildTechnologyCriteria(meta) {
       category: 'java',
       label: 'Java build configuration',
       applicable: technologies.java,
-      score: technologies.java ? (meta.hasJavaCI || meta.otherFramework ? 100 : 0) : null,
+      score: technologies.java ? (meta.hasJavaCI || hasJavaFramework(meta) ? 100 : 0) : null,
       weight: 5,
     },
   ];
@@ -466,7 +466,7 @@ export async function analyzeRepo(username, repo, token) {
     phpVersion: null,
     mavenVersion: null,
     javaVersion: null,
-    otherFramework: null,
+    hasAngular: false,
     frameworks: [],
     frameworksLabel: '',
     languages: [],
@@ -547,13 +547,17 @@ export async function analyzeRepo(username, repo, token) {
 
   const pomXml = rootPomXml || backendPomXml;
   meta.hasMavenConfig = pomXml !== null && pomXml !== undefined || mavenWrapperProps !== null && mavenWrapperProps !== undefined;
+  const javaFrameworks = [];
   if (pomXml) {
     if (!meta.mavenVersion) {
       meta.mavenVersion = detectMavenVersion(pomXml);
     }
     meta.javaVersion = detectJavaVersion(pomXml);
     meta.hasDependencyManagement = detectDependencyManagement(pomXml);
-    meta.otherFramework = detectJavaFramework(pomXml);
+    const javaFramework = detectJavaFramework(pomXml);
+    if (javaFramework) {
+      javaFrameworks.push({ name: javaFramework, version: meta.javaVersion || null, runtime: 'Java' });
+    }
   }
 
   // PHP detection: check docker-compose.yml first, then fallback to config file
@@ -569,24 +573,44 @@ export async function analyzeRepo(username, repo, token) {
     meta.phpVersion = 'unknown';
   }
 
-  if (meta.angular) {
+  meta.hasAngular = meta.angular !== null;
+  if (meta.hasAngular) {
     meta.frameworks.push({ name: 'Angular', version: meta.angular });
   }
-  if (meta.otherFramework) {
-    meta.frameworks.push({ name: meta.otherFramework, version: meta.javaVersion || meta.mavenVersion || null });
-  }
+  meta.frameworks.push(...javaFrameworks);
   if (meta.phpVersion) {
     meta.frameworks.push({ name: 'PHP', version: meta.phpVersion });
   }
-  meta.frameworksLabel = meta.frameworks
-    .map(fw => (fw.version ? `${fw.name} (${fw.version})` : fw.name))
-    .join(', ');
+  meta.frameworksLabel = formatFrameworksLabel(meta.frameworks);
 
   const health = calculateHealthScore(repo, meta);
   meta.healthScore = health.score;
   meta.health = health;
 
   return { repo, meta };
+}
+
+/**
+ * Whether a Java framework is present in meta.frameworks.
+ * @param {object} meta
+ * @returns {boolean}
+ */
+function hasJavaFramework(meta) {
+  return Array.isArray(meta.frameworks) && meta.frameworks.some(fw => fw.runtime === 'Java');
+}
+
+/**
+ * Build the display label for a list of frameworks, e.g. "Spring Boot (Java 25)".
+ * @param {Array<{name: string, version: string|null, runtime?: string}>} frameworks
+ * @returns {string}
+ */
+export function formatFrameworksLabel(frameworks) {
+  return frameworks
+    .map(fw => {
+      if (!fw.version) return fw.name;
+      return fw.runtime ? `${fw.name} (${fw.runtime} ${fw.version})` : `${fw.name} (${fw.version})`;
+    })
+    .join(', ');
 }
 
 /**

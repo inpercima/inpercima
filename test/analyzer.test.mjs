@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateHealthScore } from '../src/analyzer.mjs';
+import { calculateHealthScore, formatFrameworksLabel } from '../src/analyzer.mjs';
 
 /**
  * Build a minimal, "healthy" repo object that satisfies all general criteria.
@@ -37,7 +37,6 @@ function makeMeta(overrides = {}) {
     nodeVersion: null,
     mavenVersion: null,
     javaVersion: null,
-    otherFramework: null,
     ...overrides,
   };
 }
@@ -96,7 +95,7 @@ test('a Maven/Java repository receives Maven and Java-specific criteria', () => 
     mavenVersion: '3.9.5',
     javaVersion: '21',
     hasDependencyManagement: true,
-    otherFramework: 'Spring Boot',
+    frameworks: [{ name: 'Spring Boot', version: '21', runtime: 'Java' }],
   });
 
   const result = calculateHealthScore(repo, meta);
@@ -115,6 +114,17 @@ test('a Maven/Java repository receives Maven and Java-specific criteria', () => 
   const javaBuildConfig = result.criteria.find(c => c.id === 'java-build-config');
   assert.equal(javaBuildConfig.applicable, true);
   assert.equal(javaBuildConfig.score, 100);
+});
+
+test('Java frameworks are labelled with their runtime', () => {
+  assert.equal(
+    formatFrameworksLabel([
+      { name: 'Angular', version: '20.1.0' },
+      { name: 'Spring Boot', version: '25', runtime: 'Java' },
+      { name: 'Quarkus', version: null, runtime: 'Java' },
+    ]),
+    'Angular (20.1.0), Spring Boot (Java 25), Quarkus',
+  );
 });
 
 test('a present technology with a missing version is scored distinctly from an absent technology', () => {
