@@ -188,6 +188,20 @@ function detectJavaFramework(content) {
 }
 
 /**
+ * Detect the Java framework version from pom.xml content (Spring Boot only).
+ * @param {string} pomXml
+ * @param {string} framework
+ * @returns {string|null}
+ */
+export function detectJavaFrameworkVersion(pomXml, framework) {
+  if (framework !== 'Spring Boot') return null;
+  const match =
+    pomXml.match(/<parent>[\s\S]*?<artifactId>spring-boot-starter-parent<\/artifactId>\s*<version>(.*?)<\/version>/) ||
+    pomXml.match(/<spring-boot\.version>(.*?)<\/spring-boot\.version>/);
+  return match ? match[1].trim() : null;
+}
+
+/**
  * Extract the configured Java language level from pom.xml content.
  * @param {string} pomXml
  * @returns {string|null}
@@ -556,7 +570,10 @@ export async function analyzeRepo(username, repo, token) {
     meta.hasDependencyManagement = detectDependencyManagement(pomXml);
     const javaFramework = detectJavaFramework(pomXml);
     if (javaFramework) {
-      javaFrameworks.push({ name: javaFramework, version: meta.javaVersion || null, runtime: 'Java' });
+      javaFrameworks.push({ name: javaFramework, version: detectJavaFrameworkVersion(pomXml, javaFramework), runtime: 'Java' });
+    }
+    if (meta.javaVersion) {
+      javaFrameworks.push({ name: 'Java', version: meta.javaVersion });
     }
   }
 
@@ -600,16 +617,13 @@ function hasJavaFramework(meta) {
 }
 
 /**
- * Build the display label for a list of frameworks, e.g. "Spring Boot (Java 25)".
+ * Build the display label for a list of frameworks, e.g. "Spring Boot (4.1.2), Java (21)".
  * @param {Array<{name: string, version: string|null, runtime?: string}>} frameworks
  * @returns {string}
  */
 export function formatFrameworksLabel(frameworks) {
   return frameworks
-    .map(fw => {
-      if (!fw.version) return fw.name;
-      return fw.runtime ? `${fw.name} (${fw.runtime} ${fw.version})` : `${fw.name} (${fw.version})`;
-    })
+    .map(fw => (fw.version ? `${fw.name} (${fw.version})` : fw.name))
     .join(', ');
 }
 
