@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateHealthScore, formatFrameworksLabel } from '../src/analyzer.mjs';
+import { calculateHealthScore, formatFrameworksLabel, detectJavaFrameworkVersion } from '../src/analyzer.mjs';
 
 /**
  * Build a minimal, "healthy" repo object that satisfies all general criteria.
@@ -95,7 +95,7 @@ test('a Maven/Java repository receives Maven and Java-specific criteria', () => 
     mavenVersion: '3.9.5',
     javaVersion: '21',
     hasDependencyManagement: true,
-    frameworks: [{ name: 'Spring Boot', version: '21', runtime: 'Java' }],
+    frameworks: [{ name: 'Spring Boot', version: '4.1.2', runtime: 'Java' }],
   });
 
   const result = calculateHealthScore(repo, meta);
@@ -116,15 +116,25 @@ test('a Maven/Java repository receives Maven and Java-specific criteria', () => 
   assert.equal(javaBuildConfig.score, 100);
 });
 
-test('Java frameworks are labelled with their runtime', () => {
+test('Java framework and Java version are labelled separately', () => {
   assert.equal(
     formatFrameworksLabel([
       { name: 'Angular', version: '20.1.0' },
-      { name: 'Spring Boot', version: '25', runtime: 'Java' },
+      { name: 'Spring Boot', version: '4.1.2', runtime: 'Java' },
+      { name: 'Java', version: '21' },
       { name: 'Quarkus', version: null, runtime: 'Java' },
     ]),
-    'Angular (20.1.0), Spring Boot (Java 25), Quarkus',
+    'Angular (20.1.0), Spring Boot (4.1.2), Java (21), Quarkus',
   );
+});
+
+test('Spring Boot version is read from the parent, falling back to the property', () => {
+  const parent = '<parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>4.1.2</version></parent>';
+  const prop = '<properties><spring-boot.version>3.5.0</spring-boot.version></properties>';
+  assert.equal(detectJavaFrameworkVersion(parent + prop, 'Spring Boot'), '4.1.2');
+  assert.equal(detectJavaFrameworkVersion(prop, 'Spring Boot'), '3.5.0');
+  assert.equal(detectJavaFrameworkVersion('<project/>', 'Spring Boot'), null);
+  assert.equal(detectJavaFrameworkVersion(parent, 'Quarkus'), null);
 });
 
 test('a present technology with a missing version is scored distinctly from an absent technology', () => {
