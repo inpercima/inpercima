@@ -42,40 +42,120 @@ npm test
 
 Runs the `node:test` suite in `test/`, focused on the health-scoring logic in `src/analyzer.mjs`.
 
-### Health scoring model
+## How dashboard values are calculated
 
-Each repository's health score is computed from a list of **criteria**, not from fixed additive points. Every criterion looks like:
+### Dashboard KPIs and languages
+
+- **Repositories** counts the public, non-fork repositories returned by GitHub.
+- **Total stars** sums the repositories' GitHub star counts.
+- **Average health score** is the rounded arithmetic mean of the individual repository scores.
+- **Primary languages** counts each repository's leading language, based on its GitHub language data (falling back to the repository's declared language).
+- **Language usage** counts every language reported for each repository. The percentage is the number of repositories using that language divided by the total repository count.
+
+The dashboard shows the five most frequent entries in each language list. All displayed figures are recalculated when the dashboard is generated.
+
+### Health score model
+
+Each repository's health score is computed from criteria rather than fixed additive points. A criterion records its score, weight, whether it applies, and its weighted contribution. For example:
 
 ```js
 {
   id: 'angular-version',
   category: 'angular',
   label: 'Angular version',
-  applicable: true,   // false when the technology isn't used by this repo
-  score: 100,          // 0-100, or null when not applicable
+  applicable: true,
+  score: 100,
   weight: 15,
-  contribution: 1500,  // score * weight, 0 when not applicable
+  contribution: 1500,
 }
 ```
 
-The final score is the **weighted average of applicable criteria only**:
+General criteria apply to every repository. Technology-specific criteria apply only when that technology is detected. An absent technology does not affect the score; if a technology is detected but a required value is missing, its criterion still applies and receives the missing-value score.
 
+#### General criteria
+
+| Criterion | Scoring | Weight |
+| --------- | ------- | :----: |
+| Recent activity | Last push less than 30 days ago: 100; less than 90 days: 70; less than 180 days: 40; less than 365 days: 15; otherwise: 0 | 30 |
+| CI/CD | Recognized CI workflow detected: 100; otherwise: 0 | 20 |
+| Description | Present: 100; absent: 0 | 10 |
+| README | Present: 100; absent: 0 | 10 |
+| License | Present: 100; absent: 0 | 10 |
+| Topics | At least one: 100; none: 0 | 10 |
+
+These criteria have a combined weight of 90.
+
+#### Technology-specific criteria
+
+| Detected technology | Criterion | Scoring | Weight |
+| ------------------- | --------- | ------- | :----: |
+| Node.js | Node.js version | Version policy below | 15 |
+| Node.js | npm scripts | At least one script configured: 100; otherwise: 0 | 5 |
+| pnpm | pnpm version | Version policy below | 10 |
+| Angular | Angular version | Version policy below | 15 |
+| Angular | Angular CLI/build tooling | `@angular/cli` or `@angular-devkit/build-angular` configured: 100; otherwise: 0 | 5 |
+| PHP | PHP version | Version policy below | 15 |
+| PHP | PHP configuration | PHP configuration file detected: 100; otherwise: 0 | 5 |
+| Maven | Maven version | Version policy below | 15 |
+| Maven | Dependency management | `<dependencyManagement>` detected in `pom.xml`: 100; otherwise: 0 | 5 |
+| Java | Java version | Version policy below | 15 |
+| Java | Java build configuration | Java CI workflow or a recognized Java framework detected: 100; otherwise: 0 | 5 |
+
+Node.js is detected from a root or `frontend/package.json`; Angular is detected from `@angular/core` in either file; pnpm is detected when a `pnpm@<version>` string is present in the README. PHP is detected from a recognized PHP image in the root `docker-compose.yml`, the `api/config/config.default.php` file, or PHP among the repository's reported languages. Maven and Java are both detected from a root/backend `pom.xml` or Maven wrapper. Recognized Java frameworks are Spring Boot, Quarkus, Micronaut, and Helidon. For a detected technology, its criteria apply even when a value is missing.
+
+#### Version policies
+
+The highest matching minimum version determines the score. A version below the lowest listed threshold scores 25; a missing version scores 0; an unparsable version scores 40.
+
+| Technology | Minimum version → score |
+| ---------- | ----------------------- |
+| Node.js | 26 → 100; 24 → 90; 22 → 80; 20 → 70; 18 → 50 |
+| pnpm | 12 → 100; 11 → 90; 9 → 80; 7 → 70; 6 → 50 |
+| Angular | 22 → 100; 20 → 90; 18 → 80; 16 → 70 |
+| PHP | 8.2 → 100; 8.1 → 90; 8.0 → 75; 7.4 → 50 |
+| Maven | 3.9 → 100; 3.8 → 85; 3.6 → 70 |
+| Java | 27 → 100; 25 → 90; 21 → 80; 17 → 70; 11 → 50 |
+
+Version thresholds are centralized in `VERSION_POLICIES` in `src/analyzer.mjs`. PHP detected from a configuration file or language data without a discoverable version is assigned `unknown`, which receives the unparsable-version score of 40.
+
+#### Formula
+
+Only applicable criteria contribute:
+
+```text
+totalScore = sum(score * weight)
+totalWeight = sum(weight)
+healthScore = min(100, max(0, round(totalScore / totalWeight)))
 ```
-score = round( sum(score * weight for applicable criteria) / sum(weight for applicable criteria) )
-```
 
-clamped to the 0-100 range (0 if there are no applicable criteria at all).
+If no criteria apply, the score is 0. The total weight varies by repository: Maven and Java each add 20, Angular adds 20, Node.js adds 20, PHP adds 20, and pnpm adds 10. `analyzeRepo()` exposes the score as `meta.healthScore` and the detailed result as `meta.health = { score, technologies, criteria }`.
 
-Two groups of criteria exist:
+#### Worked examples
 
-- **General criteria** – applicable to (almost) every repository: recent activity, description, README, CI/CD, license, topics, community signal (stars).
-- **Technology criteria** – only added when the corresponding technology is actually detected (via already-fetched files, no extra API calls): Node.js (`package.json`), Angular (`@angular/core` dependency), Maven/Java (`pom.xml` / Maven wrapper), and PHP (framework config marker).
+These illustrative inputs demonstrate the formula; they are not claims about current repository metadata.
 
-A technology that is **absent** is excluded entirely (`applicable: false`, `score: null`) and never lowers the score. A technology that is **present but missing a required value** (e.g. a `pom.xml` without a discoverable Maven version) stays `applicable: true` with a low/zero score, so it is scored differently from "not used at all". This means a JavaScript-only repository can reach the same maximum score (100) as a Java/Maven/Angular repository, as long as it satisfies the criteria that are actually relevant to it.
+**Example with Maven and Java detected**
 
-Version-based criteria (Node.js, Angular, Maven, Java) are scored via centralized policy thresholds in `VERSION_POLICIES` (in `src/analyzer.mjs`), so thresholds can be tuned in one place. Malformed/unparsable version strings are handled safely and scored distinctly from a missing version.
+| Criteria | Illustrative scores × weights | Contribution |
+| -------- | ----------------------------- | :----------: |
+| General | 70×30 + 100×20 + 100×10 + 100×10 + 100×10 + 0×10 | 7,100 |
+| Maven | 100×15 + 100×5 | 2,000 |
+| Java | 90×15 + 0×5 | 1,350 |
+| **Total** | **Total weight: 90 + 20 + 20 = 130** | **10,450** |
 
-`analyzeRepo()` exposes both the existing flat `meta.healthScore` (for backward compatibility) and the full structured result at `meta.health = { score, technologies, criteria }`.
+`round(10,450 / 130) = 80`
+
+**Example with Node.js, pnpm, and Angular detected**
+
+| Criteria | Illustrative scores × weights | Contribution |
+| -------- | ----------------------------- | :----------: |
+| General | 100×30 + 100×20 + 100×10 + 100×10 + 100×10 + 100×10 | 9,000 |
+| Node.js | 90×15 + 100×5 | 1,850 |
+| pnpm | 80×10 | 800 |
+| Angular | 90×15 + 100×5 | 1,850 |
+| **Total** | **Total weight: 90 + 20 + 10 + 20 = 140** | **13,500** |
+
+`round(13,500 / 140) = 96`
 
 ### CI/CD
 
