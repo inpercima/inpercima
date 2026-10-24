@@ -8,27 +8,27 @@
 
 | 🗂️ Repositories | ⭐ Total Stars | 💚 Avg. Health Score |
 | :-: | :-: | :-: |
-| **25** | **21** | **69 / 100** |
+| **22** | **21** | **74 / 100** |
 
 ## 🏷️ Primary Languages
 
 | Language | Repos | Distribution |
 | -------- | :---: | ------------ |
-| TypeScript | 11 | █████████░░░░░░░░░░░ |
-| Java | 4 | ███░░░░░░░░░░░░░░░░░ |
-| JavaScript | 4 | ███░░░░░░░░░░░░░░░░░ |
-| HTML | 3 | ██░░░░░░░░░░░░░░░░░░ |
+| TypeScript | 10 | █████████░░░░░░░░░░░ |
+| Java | 4 | ████░░░░░░░░░░░░░░░░ |
+| JavaScript | 4 | ████░░░░░░░░░░░░░░░░ |
+| HTML | 2 | ██░░░░░░░░░░░░░░░░░░ |
 | Dockerfile | 1 | █░░░░░░░░░░░░░░░░░░░ |
 
 ## 📊 Language Usage
 
 | Language | Distribution | Repos |
 | -------- | ------------ | ----- |
-| JavaScript | ███████████████░░░░░ | 19 of 25 repos (76%) |
-| HTML | ██████████████░░░░░░ | 18 of 25 repos (72%) |
-| TypeScript | ██████████████░░░░░░ | 17 of 25 repos (68%) |
-| CSS | ██████████████░░░░░░ | 17 of 25 repos (68%) |
-| SCSS | ██████████░░░░░░░░░░ | 12 of 25 repos (48%) |
+| JavaScript | ███████████████░░░░░ | 17 of 22 repos (77%) |
+| HTML | ███████████████░░░░░ | 16 of 22 repos (73%) |
+| CSS | ███████████████░░░░░ | 16 of 22 repos (73%) |
+| TypeScript | ██████████████░░░░░░ | 15 of 22 repos (68%) |
+| SCSS | ███████████░░░░░░░░░ | 12 of 22 repos (55%) |
 
 ## 🏆 Top 5 by Health Score
 
@@ -40,4 +40,4 @@
 | [mc-status](https://github.com/inpercima/mc-status) | TypeScript | ⭐ 0 | 🟢 98 |
 | [mdrza-ranking](https://github.com/inpercima/mdrza-ranking) | TypeScript | ⭐ 0 | 🟢 98 |
 
-> For details on how the dashboard values—especially health scores—are calculated, see [README_PROJECT.md](README_PROJECT.md).
+> For details on how dashboard values—especially health scores—are calculated, see [README_PROJECT.md](README_PROJECT.md).
