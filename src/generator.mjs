@@ -39,10 +39,11 @@ function healthBadge(score) {
  * @param {object} meta
  * @returns {string}
  */
-function renderRow(repo, meta) {
+function renderRow(repo, meta, index) {
   const topics = (repo.topics || [])
     .map(t => `<span class="inline-block bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded px-1.5 py-0.5 text-xs mb-0.5">${esc(t)}</span>`)
     .join(" ");
+  const detailId = `detail-${index}`;
 
   const languagesHtml = (meta.languages && meta.languages.length > 0)
     ? meta.languages.map(l => {
@@ -59,6 +60,7 @@ function renderRow(repo, meta) {
 
   const cells = [
     `<td class="${tdBase}">
+       <button type="button" data-detail-toggle aria-expanded="false" aria-controls="${detailId}" aria-label="Score-Details für ${esc(repo.name)} anzeigen" class="mr-1 text-slate-400 hover:text-slate-200" title="Score-Details anzeigen">▸</button>
        <a href="${esc(repo.html_url)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-blue-400 hover:underline">${esc(repo.name)}</a>
        ${meta.angular ? `<div class="text-xs text-slate-500 mt-0.5 sm:hidden">Angular ${esc(meta.angular)}</div>` : ""}
        ${meta.nodeVersion ? `<div class="text-xs text-slate-500 mt-0.5 sm:hidden">Node.js ${esc(meta.nodeVersion)}</div>` : ""}
@@ -74,7 +76,64 @@ function renderRow(repo, meta) {
     `<td class="${tdBase}">${healthBadge(meta.healthScore)}</td>`,
   ];
 
-  return `<tr class="group" data-topics="${esc((repo.topics || []).join(","))}" data-name="${esc(repo.name)}">${cells.join("")}</tr>`;
+  const criteria = meta.health?.criteria || [];
+  const applicableCriteria = criteria.filter(criterion => criterion.applicable);
+  const totalScore = applicableCriteria.reduce((sum, criterion) => sum + criterion.score * criterion.weight, 0);
+  const totalWeight = applicableCriteria.reduce((sum, criterion) => sum + criterion.weight, 0);
+  const healthScore = totalWeight === 0 ? 0 : Math.min(100, Math.max(0, Math.round(totalScore / totalWeight)));
+  const categoryLabels = {
+    general: "Allgemein",
+    node: "Node.js",
+    pnpm: "pnpm",
+    angular: "Angular",
+    php: "PHP",
+    maven: "Maven",
+    java: "Java",
+  };
+  const criterionRows = criteria.map(criterion => {
+    const applicable = criterion.applicable;
+    const score = applicable ? criterion.score : null;
+    const contribution = applicable ? criterion.score * criterion.weight : null;
+    const rowClass = !applicable
+      ? "text-slate-500"
+      : score < 50
+        ? "text-rose-400"
+        : score < 100
+          ? "text-amber-400"
+          : "text-slate-200";
+    const scoreLabel = applicable ? esc(score) : "nicht anwendbar";
+    const contributionLabel = applicable
+      ? `${esc(score)} × ${esc(criterion.weight)} = ${esc(contribution)}`
+      : "nicht anwendbar";
+
+    return `<tr class="${rowClass}">
+      <td class="px-3 py-2">${esc(criterion.label)}</td>
+      <td class="px-3 py-2">${esc(categoryLabels[criterion.category] || criterion.category)}</td>
+      <td class="px-3 py-2 text-right">${scoreLabel}</td>
+      <td class="px-3 py-2 text-right">${esc(criterion.weight)}</td>
+      <td class="px-3 py-2 text-right">${contributionLabel}</td>
+    </tr>`;
+  }).join("");
+  const detailRow = `<tr class="detail-row hidden" id="${detailId}">
+    <td colspan="8" class="px-4 py-4 bg-slate-900/70 border-t border-slate-700">
+      <h3 class="font-semibold mb-3">Health-Score-Herleitung</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead class="text-slate-400 border-b border-slate-700">
+            <tr><th class="px-3 py-2 text-left">Kriterium</th><th class="px-3 py-2 text-left">Kategorie</th><th class="px-3 py-2 text-right">Score (0–100)</th><th class="px-3 py-2 text-right">Gewicht</th><th class="px-3 py-2 text-right">Beitrag (Score × Gewicht)</th></tr>
+          </thead>
+          <tbody>${criterionRows}</tbody>
+        </table>
+      </div>
+      <p class="mt-3 text-xs text-slate-300">
+        totalScore = Σ(score × weight) = ${esc(totalScore)};&nbsp;
+        totalWeight = Σ(weight) = ${esc(totalWeight)};&nbsp;
+        healthScore = round(${esc(totalScore)} / ${esc(totalWeight)}) = ${esc(healthScore)}
+      </p>
+    </td>
+  </tr>`;
+
+  return `<tr class="group repo-row" data-detail="${detailId}" data-topics="${esc((repo.topics || []).join(","))}" data-name="${esc(repo.name)}">${cells.join("")}</tr>\n${detailRow}`;
 }
 
 /**
@@ -228,7 +287,7 @@ ${top5Rows}
  * @returns {string}
  */
 export function generateDashboard(analyzed, stats, generatedAt) {
-  const rows = analyzed.map(({ repo, meta }) => renderRow(repo, meta)).join("\n");
+  const rows = analyzed.map(({ repo, meta }, index) => renderRow(repo, meta, index)).join("\n");
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -297,7 +356,7 @@ export function generateDashboard(analyzed, stats, generatedAt) {
   const searchInput = document.getElementById("searchInput");
   const tbody = document.getElementById("repoBody");
   const noResults = document.getElementById("noResults");
-  const rows = Array.from(tbody.querySelectorAll("tr"));
+  const rows = Array.from(tbody.querySelectorAll("tr.repo-row"));
   const headers = Array.from(document.querySelectorAll("th[data-col]"));
 
   let sortCol = 2;
@@ -308,8 +367,7 @@ export function generateDashboard(analyzed, stats, generatedAt) {
   }
 
   function sortRows() {
-    const visible = rows.filter(r => r.style.display !== "none");
-    visible.sort((a, b) => {
+    const sorted = [...rows].sort((a, b) => {
       const av = getCell(a, sortCol);
       const bv = getCell(b, sortCol);
       const an = parseFloat(av);
@@ -317,7 +375,11 @@ export function generateDashboard(analyzed, stats, generatedAt) {
       if (!isNaN(an) && !isNaN(bn)) return sortAsc ? an - bn : bn - an;
       return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
     });
-    visible.forEach(r => tbody.appendChild(r));
+    sorted.forEach(r => {
+      tbody.appendChild(r);
+      const detail = document.getElementById(r.dataset.detail);
+      if (detail) tbody.appendChild(detail);
+    });
   }
 
   function applyFilter() {
@@ -328,6 +390,8 @@ export function generateDashboard(analyzed, stats, generatedAt) {
       const topics = r.dataset.topics ?? "";
       const match = !q || name.toLowerCase().includes(q) || topics.toLowerCase().includes(q);
       r.style.display = match ? "" : "none";
+      const detail = document.getElementById(r.dataset.detail);
+      if (detail) detail.style.display = match ? "" : "none";
       if (match) visible++;
     });
     noResults.style.display = visible === 0 ? "" : "none";
@@ -355,6 +419,18 @@ export function generateDashboard(analyzed, stats, generatedAt) {
   });
 
   searchInput.addEventListener("input", applyFilter);
+  tbody.addEventListener("click", event => {
+    const button = event.target.closest("[data-detail-toggle]");
+    if (!button) return;
+    const detail = document.getElementById(button.getAttribute("aria-controls"));
+    if (!detail) return;
+    const expanded = button.getAttribute("aria-expanded") === "true";
+    button.setAttribute("aria-expanded", String(!expanded));
+    button.setAttribute("aria-label", (expanded ? "Score-Details für " : "Score-Details für ") + button.nextElementSibling.textContent + (expanded ? " anzeigen" : " ausblenden"));
+    button.textContent = expanded ? "▸" : "▾";
+    button.title = expanded ? "Score-Details anzeigen" : "Score-Details ausblenden";
+    detail.classList.toggle("hidden", expanded);
+  });
 
   // Initial sort
   sortRows();

@@ -8,6 +8,7 @@ A comprehensive developer dashboard that displays analytics and information abou
 - **Repository Table**: Name, description, language, stars, topics, Angular/Maven/Node.js/pnpm versions, Java framework, and health score
 - **Interactive Filtering**: Filter by repository name or topic
 - **Sortable Columns**: Click any column header to sort
+- **Health Score Details**: Expand a repository row to see its criteria and score calculation
 - **Responsive Design**: Works on mobile and desktop
 - **Dark/Light Theme**: Follows system preference
 
