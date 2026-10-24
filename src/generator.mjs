@@ -292,7 +292,7 @@ export function generateDashboard(analyzed, stats, generatedAt) {
   const TH_HIDDEN_SORTED = "${TH_HIDDEN_SORTED}";
   // Columns hidden on mobile (< sm breakpoint). Must match the th/td elements
   // that carry the "hidden sm:table-cell" class in the HTML template above.
-  const MOBILE_HIDDEN_COLS = new Set([1, 3, 4, 5, 6, 7, 8]);
+  const MOBILE_HIDDEN_COLS = new Set([1, 3, 4, 5, 6]);
 
   const searchInput = document.getElementById("searchInput");
   const tbody = document.getElementById("repoBody");
