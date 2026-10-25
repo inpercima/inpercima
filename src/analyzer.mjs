@@ -566,7 +566,7 @@ export async function analyzeRepo(username, repo, token) {
     fetchFileContent(username, name, 'backend/mvnw.cmd', token),
     fetchFileContent(username, name, 'README.md', token),
     fetchFileContent(username, name, '.github/workflows/node_ci.yml', token),
-    fetchFileContent(username, name, '.github/workflows/java_ci.yaml', token),
+    fetchFileContent(username, name, '.github/workflows/java_ci.yml', token),
     fetchFileContent(username, name, 'docker-compose.yml', token),
     fetchLanguages(username, name, token),
     fetchWorkflowRuns(username, name, token),
