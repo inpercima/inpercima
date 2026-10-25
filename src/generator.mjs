@@ -70,8 +70,6 @@ function renderRow(repo, meta, index) {
     `<td class="${tdHidden}">${languagesHtml}</td>`,
     `<td class="${tdBase}">${repo.stargazers_count}</td>`,
     `<td class="${tdHidden}">${topics || "–"}</td>`,
-    `<td class="${tdHidden}">${meta.nodeVersion ? esc(meta.nodeVersion) : "–"}</td>`,
-    `<td class="${tdHidden}">${meta.pnpmVersion ? esc(meta.pnpmVersion) : "–"}</td>`,
     `<td class="${tdHidden}">${meta.frameworksLabel ? esc(meta.frameworksLabel) : "–"}</td>`,
     `<td class="${tdBase}">${healthBadge(meta.healthScore)}</td>`,
   ];
@@ -116,7 +114,7 @@ function renderRow(repo, meta, index) {
     </tr>`;
   }).join("");
   const detailRow = `<tr class="detail-row hidden" id="${detailId}">
-    <td colspan="8" class="px-4 py-4 bg-slate-900/70 border-t border-slate-700">
+    <td colspan="6" class="px-4 py-4 bg-slate-900/70 border-t border-slate-700">
       <h3 class="font-semibold mb-3">Health-Score-Herleitung</h3>
       <div class="overflow-x-auto">
         <table class="w-full text-xs">
@@ -324,10 +322,8 @@ export function generateDashboard(analyzed, stats, generatedAt) {
           <th class="${TH_HIDDEN}" data-col="1">Language</th>
           <th class="${TH_SORTED}" data-col="2">Stars ▼</th>
           <th class="${TH_HIDDEN}" data-col="3">Topics</th>
-          <th class="${TH_HIDDEN}" data-col="4">Node.js</th>
-          <th class="${TH_HIDDEN}" data-col="5">pnpm</th>
-          <th class="${TH_HIDDEN}" data-col="6">Frameworks</th>
-          <th class="${TH_BASE}" data-col="7">Health</th>
+          <th class="${TH_HIDDEN}" data-col="4">Frameworks</th>
+          <th class="${TH_BASE}" data-col="5">Health</th>
         </tr>
       </thead>
       <tbody id="repoBody">
@@ -352,7 +348,7 @@ export function generateDashboard(analyzed, stats, generatedAt) {
   const TH_HIDDEN_SORTED = "${TH_HIDDEN_SORTED}";
   // Columns hidden on mobile (< sm breakpoint). Must match the th/td elements
   // that carry the "hidden sm:table-cell" class in the HTML template above.
-  const MOBILE_HIDDEN_COLS = new Set([1, 3, 4, 5, 6]);
+  const MOBILE_HIDDEN_COLS = new Set([1, 3, 4]);
 
   const searchInput = document.getElementById("searchInput");
   const tbody = document.getElementById("repoBody");
