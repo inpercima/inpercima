@@ -85,14 +85,7 @@ General criteria apply to every repository. Technology-specific criteria apply o
 
 These criteria have a combined weight of 70.
 
-CI/CD is optional. If the repository has CI workflows (files in `.github/workflows`, falling back to `node_ci.yml`/`java_ci.yaml`), two additional criteria apply; without CI they are not applicable and neither penalize nor count towards the weight:
-
-| Criterion | Scoring | Weight |
-| --------- | ------- | :----: |
-| CI/CD runs successful | Share of workflows whose latest completed run has `conclusion === 'success'` (×100); no runs found: 0 | 10 |
-| actions/checkout up to date | Share of `uses: actions/checkout@vX` entries on the latest major version (fetched from the `actions/checkout` latest release, fallback `FALLBACK_CHECKOUT_MAJOR`) (×100); no entries: 100 | 10 |
-
-With CI the general criteria have a combined weight of 90.
+General criteria always apply and keep a combined weight of 70.
 
 #### Technology-specific criteria
 
@@ -102,14 +95,14 @@ With CI the general criteria have a combined weight of 90.
 | Node.js | npm scripts | At least one script configured: 100; otherwise: 0 | 5 |
 | pnpm | pnpm version | Version policy below | 10 |
 | Angular | Angular version | Version policy below | 15 |
-| Angular | Angular CLI/build tooling | `@angular/cli` or `@angular-devkit/build-angular` configured: 100; otherwise: 0 | 5 |
 | PHP | PHP version | Version policy below | 15 |
-| PHP | PHP configuration | PHP configuration file detected: 100; otherwise: 0 | 5 |
 | Maven | Maven version | Version policy below | 15 |
 | Java | Java version | Version policy below | 15 |
 | Java | Java build configuration | Java CI workflow or a recognized Java framework detected: 100; otherwise: 0 | 5 |
+| CI/CD | CI/CD runs successful | Share of workflows whose latest completed run has `conclusion === 'success'` (×100); no runs found: 0 | 10 |
+| CI/CD | actions/checkout up to date | Share of `uses: actions/checkout@vX` entries on the latest major version (fetched from the `actions/checkout` latest release, fallback `FALLBACK_CHECKOUT_MAJOR`) (×100); no entries: 100 | 10 |
 
-Node.js is detected from a root or `frontend/package.json`; Angular is detected from `@angular/core` in either file; pnpm is detected when a `pnpm@<version>` string is present in the README. PHP is detected from a recognized PHP image in the root `docker-compose.yml`, the `api/config/config.default.php` file, or PHP among the repository's reported languages. Maven and Java are both detected from a root/backend `pom.xml` or Maven wrapper. Recognized Java frameworks are Spring Boot, Quarkus, Micronaut, and Helidon. For a detected technology, its criteria apply even when a value is missing.
+Node.js is detected from a root or `frontend/package.json`; Angular is detected from `@angular/core` in either file; pnpm is detected when a `pnpm@<version>` string is present in the README. PHP and its version are detected only from a recognized PHP image in the root `docker-compose.yml`. CI/CD is detected from the CI workflow files `.github/workflows/node_ci.yml` and `.github/workflows/java_ci.yaml`. Maven and Java are both detected from a root/backend `pom.xml` or Maven wrapper. The only recognized Java framework is Spring Boot. For a detected technology, its criteria apply even when a value is missing.
 
 #### Version policies
 
@@ -136,7 +129,7 @@ totalWeight = sum(weight)
 healthScore = min(100, max(0, round(totalScore / totalWeight)))
 ```
 
-If no criteria apply, the score is 0. The total weight varies by repository: Maven adds 15, Java adds 20, CI/CD adds 20, Angular adds 20, Node.js adds 20, PHP adds 20, and pnpm adds 10. `analyzeRepo()` exposes the score as `meta.healthScore` and the detailed result as `meta.health = { score, technologies, criteria }`.
+If no criteria apply, the score is 0. The total weight varies by repository: Maven adds 15, Java adds 20, CI/CD adds 20, Angular adds 15, Node.js adds 20, PHP adds 15, and pnpm adds 10. `analyzeRepo()` exposes the score as `meta.healthScore` and the detailed result as `meta.health = { score, technologies, criteria }`.
 
 #### Worked examples
 
@@ -146,10 +139,11 @@ These illustrative inputs demonstrate the formula; they are not claims about cur
 
 | Criteria | Illustrative scores × weights | Contribution |
 | -------- | ----------------------------- | :----------: |
-| General (incl. CI) | 70×30 + 100×10 + 100×10 + 100×10 + 100×10 + 100×10 + 0×10 | 7,100 |
+| General | 70×30 + 100×10 + 100×10 + 100×10 + 100×10 | 6,100 |
 | Maven | 100×15 | 1,500 |
 | Java | 90×15 + 0×5 | 1,350 |
-| **Total** | **Total weight: 90 + 15 + 20 = 125** | **9,950** |
+| CI/CD | 100×10 + 0×10 | 1,000 |
+| **Total** | **Total weight: 70 + 15 + 20 + 20 = 125** | **9,950** |
 
 `round(9,950 / 125) = 80`
 
@@ -157,13 +151,13 @@ These illustrative inputs demonstrate the formula; they are not claims about cur
 
 | Criteria | Illustrative scores × weights | Contribution |
 | -------- | ----------------------------- | :----------: |
-| General (no CI) | 100×30 + 100×10 + 100×10 + 100×10 + 100×10 | 7,000 |
+| General | 100×30 + 100×10 + 100×10 + 100×10 + 100×10 | 7,000 |
 | Node.js | 90×15 + 100×5 | 1,850 |
 | pnpm | 80×10 | 800 |
-| Angular | 90×15 + 100×5 | 1,850 |
-| **Total** | **Total weight: 70 + 20 + 10 + 20 = 120** | **11,500** |
+| Angular | 90×15 | 1,350 |
+| **Total** | **Total weight: 70 + 20 + 10 + 15 = 115** | **11,000** |
 
-`round(11,500 / 120) = 96`
+`round(11,000 / 115) = 96`
 
 ### CI/CD
 

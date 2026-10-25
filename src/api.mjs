@@ -121,36 +121,6 @@ export async function fetchWorkflowRuns(username, repoName, token, perPage = 30)
 }
 
 /**
- * Fetch the workflow files (.yml/.yaml) in `.github/workflows` including their content.
- * Returns an empty array if the directory does not exist or on error.
- * @param {string} username
- * @param {string} repoName
- * @param {string|undefined} token
- * @returns {Promise<Array<{name: string, content: string|null}>>}
- */
-export async function fetchWorkflowFiles(username, repoName, token) {
-  const headers = buildHeaders(token);
-  const url = `${BASE_URL}/repos/${username}/${repoName}/contents/.github/workflows`;
-
-  try {
-    const res = await fetch(url, { headers });
-    if (!res.ok) return [];
-    const entries = await res.json();
-    if (!Array.isArray(entries)) return [];
-
-    const files = entries.filter(e => e.type === "file" && /\.ya?ml$/i.test(e.name));
-    return await Promise.all(
-      files.map(async file => ({
-        name: file.name,
-        content: await fetchFileContent(username, repoName, `.github/workflows/${file.name}`, token),
-      })),
-    );
-  } catch {
-    return [];
-  }
-}
-
-/**
  * Fetch the major version of the latest `actions/checkout` release.
  * Returns null if it cannot be determined.
  * @param {string|undefined} token

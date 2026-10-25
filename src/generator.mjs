@@ -89,6 +89,7 @@ function renderRow(repo, meta, index) {
     php: "PHP",
     maven: "Maven",
     java: "Java",
+    cicd: "CI/CD",
   };
   const criterionRows = criteria.map(criterion => {
     const applicable = criterion.applicable;
