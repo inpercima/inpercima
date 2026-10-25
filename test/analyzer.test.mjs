@@ -213,6 +213,18 @@ test('without CI the CI criteria are not applicable and a repo can still reach 1
   assert.equal(result.score, 100);
 });
 
+test('CI criteria belong to the cicd category and apply only when CI is detected', () => {
+  const withCI = calculateHealthScore(makeRepo(), makeMeta({ hasCI: true }));
+  const withoutCI = calculateHealthScore(makeRepo(), makeMeta({ hasCI: false }));
+  for (const id of ['ci-runs', 'ci-checkout']) {
+    assert.equal(criterion(withCI, id).category, 'cicd');
+    assert.equal(criterion(withCI, id).applicable, true);
+    assert.equal(criterion(withoutCI, id).applicable, false);
+  }
+  assert.equal(withCI.technologies.cicd, true);
+  assert.equal(withoutCI.technologies.cicd, false);
+});
+
 test('a failed CI run or outdated actions/checkout reduces the score', () => {
   const failed = calculateHealthScore(makeRepo(), makeMeta({ ciRunSuccessRate: 0 }));
   assert.equal(criterion(failed, 'ci-runs').score, 0);

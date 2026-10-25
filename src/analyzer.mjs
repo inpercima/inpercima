@@ -333,22 +333,6 @@ function buildGeneralCriteria(repo, meta, currentYear) {
       weight: 10,
     },
     {
-      id: 'ci-runs',
-      category: 'general',
-      label: 'CI/CD runs successful',
-      applicable: Boolean(meta.hasCI),
-      score: meta.hasCI ? Math.round((meta.ciRunSuccessRate ?? 0) * 100) : null,
-      weight: 10,
-    },
-    {
-      id: 'ci-checkout',
-      category: 'general',
-      label: 'actions/checkout up to date',
-      applicable: Boolean(meta.hasCI),
-      score: meta.hasCI ? scoreCheckout(meta.checkoutMajors, meta.latestCheckoutMajor) : null,
-      weight: 10,
-    },
-    {
       id: 'license',
       category: 'general',
       label: 'License',
@@ -458,6 +442,22 @@ function buildTechnologyCriteria(meta) {
       score: technologies.java ? (meta.hasJavaCI || hasJavaFramework(meta) ? 100 : 0) : null,
       weight: 5,
     },
+    {
+      id: 'ci-runs',
+      category: 'cicd',
+      label: 'CI/CD runs successful',
+      applicable: technologies.cicd,
+      score: technologies.cicd ? Math.round((meta.ciRunSuccessRate ?? 0) * 100) : null,
+      weight: 10,
+    },
+    {
+      id: 'ci-checkout',
+      category: 'cicd',
+      label: 'actions/checkout up to date',
+      applicable: technologies.cicd,
+      score: technologies.cicd ? scoreCheckout(meta.checkoutMajors, meta.latestCheckoutMajor) : null,
+      weight: 10,
+    },
   ];
 }
 
@@ -477,6 +477,7 @@ function detectTechnologies(meta) {
     php: meta.phpVersion !== null,
     maven: meta.hasMavenConfig,
     java: meta.hasMavenConfig, // Java is currently detected via Maven build files (pom.xml)
+    cicd: Boolean(meta.hasCI),
   };
 }
 
