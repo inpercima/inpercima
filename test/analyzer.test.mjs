@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateHealthScore, formatFrameworksLabel, detectJavaFrameworkVersion, detectLicenseYear, detectCheckoutMajors } from '../src/analyzer.mjs';
+import { analyzeRepo, calculateHealthScore, formatFrameworksLabel, detectJavaFrameworkVersion, detectLicenseYear, detectCheckoutMajors, detectMavenWrapperVersion } from '../src/analyzer.mjs';
 
 /**
  * Build a minimal, "healthy" repo object that satisfies all general criteria.
@@ -124,6 +124,88 @@ test('Java framework and Java version are labelled separately', () => {
     ]),
     'Angular (20.1.0), Spring Boot (4.1.2), Java (21)',
   );
+});
+
+test('Maven Wrapper version is parsed from startup comment or assignment', () => {
+  assert.equal(detectMavenWrapperVersion('@REM Apache Maven Wrapper startup batch script, version 3.3.2'), '3.3.2');
+  assert.equal(detectMavenWrapperVersion('$WRAPPER_VERSION="3.3.2"'), '3.3.2');
+  assert.equal(detectMavenWrapperVersion('WRAPPER_VERSION=3.3.2'), '3.3.2');
+  assert.equal(detectMavenWrapperVersion('no wrapper version'), null);
+});
+
+test('analyzeRepo builds the framework label in the requested order using root mvnw.cmd first', async () => {
+  const originalFetch = globalThis.fetch;
+  const fileContents = {
+    'package.json': JSON.stringify({
+      engines: { node: '22' },
+      dependencies: { '@angular/core': '20.1.0' },
+      scripts: { test: 'test' },
+    }),
+    'README.md': 'Install pnpm@10.32.0',
+    'pom.xml': '<project><properties><maven.version>3.9.9</maven.version><java.version>21</java.version><spring-boot.version>3.4.1</spring-boot.version></properties></project>',
+    'mvnw.cmd': '@REM Apache Maven Wrapper startup batch script, version 3.3.2',
+    'backend/mvnw.cmd': 'WRAPPER_VERSION=9.9.9',
+  };
+  globalThis.fetch = async url => {
+    const pathname = new URL(url).pathname;
+    const path = pathname.includes('/contents/') ? pathname.split('/contents/')[1] : pathname;
+    if (path in fileContents) {
+      return {
+        ok: true,
+        json: async () => ({
+          encoding: 'base64',
+          content: Buffer.from(fileContents[path]).toString('base64'),
+        }),
+      };
+    }
+    if (path.endsWith('/languages')) {
+      return { ok: true, json: async () => ({ Java: 1 }) };
+    }
+    if (path.endsWith('/actions/runs')) {
+      return { ok: true, json: async () => ({ workflow_runs: [] }) };
+    }
+    if (path.endsWith('/releases/latest')) {
+      return { ok: true, json: async () => ({ tag_name: 'v5' }) };
+    }
+    return { ok: false, status: 404 };
+  };
+
+  try {
+    const { meta } = await analyzeRepo('test', {
+      name: 'repo',
+      pushed_at: new Date().toISOString(),
+      description: 'sample',
+      topics: ['sample'],
+      license: { spdx_id: 'MIT' },
+      stargazers_count: 0,
+    });
+    assert.equal(meta.mavenWrapperVersion, '3.3.2');
+    assert.deepEqual(meta.frameworks.map(framework => framework.name), [
+      'Node.js',
+      'pnpm',
+      'Angular',
+      'Maven',
+      'Maven Wrapper',
+      'Spring Boot',
+      'Java',
+    ]);
+    assert.equal(meta.frameworksLabel, 'Node.js (22), pnpm (10.32.0), Angular (20.1.0), Maven (3.9.9), Maven Wrapper (3.3.2), Spring Boot (3.4.1), Java (21)');
+
+    delete fileContents['mvnw.cmd'];
+    delete fileContents['pom.xml'];
+    const backendWrapper = await analyzeRepo('test', {
+      name: 'repo',
+      pushed_at: new Date().toISOString(),
+      description: 'sample',
+      topics: ['sample'],
+      license: { spdx_id: 'MIT' },
+      stargazers_count: 0,
+    });
+    assert.equal(backendWrapper.meta.mavenWrapperVersion, '9.9.9');
+    assert.equal(backendWrapper.meta.hasMavenConfig, true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('Spring Boot version is read from the parent, falling back to the property', () => {

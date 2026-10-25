@@ -157,6 +157,19 @@ function detectMavenVersionFromWrapper(wrapperProps) {
 }
 
 /**
+ * Extract Maven Wrapper version from mvnw.cmd content.
+ * @param {string} mvnwCmdText
+ * @returns {string|null}
+ */
+export function detectMavenWrapperVersion(mvnwCmdText) {
+  const commentMatch = mvnwCmdText.match(/Maven Wrapper startup batch script, version ([\d.]+)/i);
+  if (commentMatch) return commentMatch[1].trim();
+  const assignmentMatch = mvnwCmdText.match(/\$?WRAPPER_VERSION\s*=\s*["']?([\d.]+)["']?/i);
+  if (assignmentMatch) return assignmentMatch[1].trim();
+  return null;
+}
+
+/**
  * Extract Maven version from pom.xml content.
  * @param {string} pomXml
  * @returns {string|null}
@@ -515,6 +528,7 @@ export async function analyzeRepo(username, repo, token) {
     pnpmVersion: null,
     phpVersion: null,
     mavenVersion: null,
+    mavenWrapperVersion: null,
     javaVersion: null,
     hasAngular: false,
     frameworks: [],
@@ -531,6 +545,8 @@ export async function analyzeRepo(username, repo, token) {
     backendPomXml,
     rootMavenWrapperProps,
     backendMavenWrapperProps,
+    rootMavenWrapperCmd,
+    backendMavenWrapperCmd,
     readmeText,
     nodeCi,
     javaCi,
@@ -546,6 +562,8 @@ export async function analyzeRepo(username, repo, token) {
     fetchFileContent(username, name, 'backend/pom.xml', token),
     fetchFileContent(username, name, '.mvn/wrapper/maven-wrapper.properties', token),
     fetchFileContent(username, name, 'backend/.mvn/wrapper/maven-wrapper.properties', token),
+    fetchFileContent(username, name, 'mvnw.cmd', token),
+    fetchFileContent(username, name, 'backend/mvnw.cmd', token),
     fetchFileContent(username, name, 'README.md', token),
     fetchFileContent(username, name, '.github/workflows/node_ci.yml', token),
     fetchFileContent(username, name, '.github/workflows/java_ci.yaml', token),
@@ -608,8 +626,15 @@ export async function analyzeRepo(username, repo, token) {
     if (wrapperVersion) meta.mavenVersion = wrapperVersion;
   }
 
+  const mvnwCmdText = rootMavenWrapperCmd || backendMavenWrapperCmd;
+  if (mvnwCmdText) {
+    meta.mavenWrapperVersion = detectMavenWrapperVersion(mvnwCmdText);
+  }
+
   const pomXml = rootPomXml || backendPomXml;
-  meta.hasMavenConfig = pomXml !== null && pomXml !== undefined || mavenWrapperProps !== null && mavenWrapperProps !== undefined;
+  meta.hasMavenConfig = pomXml !== null && pomXml !== undefined
+    || mavenWrapperProps !== null && mavenWrapperProps !== undefined
+    || mvnwCmdText !== null && mvnwCmdText !== undefined;
   const javaFrameworks = [];
   if (pomXml) {
     if (!meta.mavenVersion) {
@@ -631,8 +656,20 @@ export async function analyzeRepo(username, repo, token) {
   }
 
   meta.hasAngular = meta.angular !== null;
+  if (meta.nodeVersion) {
+    meta.frameworks.push({ name: 'Node.js', version: meta.nodeVersion });
+  }
+  if (meta.pnpmVersion) {
+    meta.frameworks.push({ name: 'pnpm', version: meta.pnpmVersion });
+  }
   if (meta.hasAngular) {
     meta.frameworks.push({ name: 'Angular', version: meta.angular });
+  }
+  if (meta.mavenVersion) {
+    meta.frameworks.push({ name: 'Maven', version: meta.mavenVersion });
+  }
+  if (meta.mavenWrapperVersion) {
+    meta.frameworks.push({ name: 'Maven Wrapper', version: meta.mavenWrapperVersion });
   }
   meta.frameworks.push(...javaFrameworks);
   if (meta.phpVersion) {
