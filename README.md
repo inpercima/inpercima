@@ -8,7 +8,7 @@
 
 | 🗂️ Repositories | ⭐ Total Stars | 💚 Avg. Health Score |
 | :-: | :-: | :-: |
-| **22** | **21** | **82 / 100** |
+| **22** | **21** | **85 / 100** |
 
 ## 🏷️ Primary Languages
 
@@ -36,8 +36,8 @@
 | ---------- | -------- | :---: | :----: |
 | [starter-playground](https://github.com/inpercima/starter-playground) | HTML | ⭐ 0 | 🟢 100 |
 | [publicmedia](https://github.com/inpercima/publicmedia) | TypeScript | ⭐ 6 | 🟢 99 |
+| [server-connector](https://github.com/inpercima/server-connector) | Java | ⭐ 2 | 🟢 98 |
 | [inpercima](https://github.com/inpercima/inpercima) | JavaScript | ⭐ 0 | 🟢 98 |
-| [mittagstisch](https://github.com/inpercima/mittagstisch) | Java | ⭐ 3 | 🟢 92 |
-| [server-connector](https://github.com/inpercima/server-connector) | Java | ⭐ 2 | 🟢 91 |
+| [rest-api](https://github.com/inpercima/rest-api) | Java | ⭐ 0 | 🟢 98 |
 
 > For details on how dashboard values—especially health scores—are calculated, see [README_PROJECT.md](README_PROJECT.md).
