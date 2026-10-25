@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateHealthScore, formatFrameworksLabel, detectJavaFrameworkVersion } from '../src/analyzer.mjs';
+import { calculateHealthScore, formatFrameworksLabel, detectJavaFrameworkVersion, detectLicenseYear, detectCheckoutMajors } from '../src/analyzer.mjs';
 
 /**
  * Build a minimal, "healthy" repo object that satisfies all general criteria.
@@ -27,14 +27,19 @@ function makeMeta(overrides = {}) {
   return {
     hasReadme: true,
     hasCI: true,
+    ciRunSuccessRate: 1,
+    checkoutMajors: [5],
+    latestCheckoutMajor: 5,
+    licenseYear: new Date().getFullYear(),
     hasJavaCI: false,
     hasPackageJson: false,
     hasPackageScripts: false,
     hasAngularTooling: false,
     hasMavenConfig: false,
-    hasDependencyManagement: false,
     angular: null,
     nodeVersion: null,
+    pnpmVersion: null,
+    phpVersion: null,
     mavenVersion: null,
     javaVersion: null,
     ...overrides,
@@ -46,7 +51,7 @@ test('a JavaScript/Node repository is not penalized for missing Angular, Java or
   const meta = makeMeta({
     hasPackageJson: true,
     hasPackageScripts: true,
-    nodeVersion: '24.16.0',
+    nodeVersion: '26.0.0',
   });
 
   const result = calculateHealthScore(repo, meta);
@@ -69,10 +74,10 @@ test('an Angular repository receives Angular-specific criteria', () => {
   const repo = makeRepo();
   const meta = makeMeta({
     hasPackageJson: true,
-    angular: '20.1.0',
+    angular: '22.0.0',
     hasAngularTooling: true,
     hasPackageScripts: true,
-    nodeVersion: '24.0.0',
+    nodeVersion: '26.0.0',
   });
 
   const result = calculateHealthScore(repo, meta);
@@ -93,8 +98,7 @@ test('a Maven/Java repository receives Maven and Java-specific criteria', () => 
   const meta = makeMeta({
     hasMavenConfig: true,
     mavenVersion: '3.9.5',
-    javaVersion: '21',
-    hasDependencyManagement: true,
+    javaVersion: '27',
     frameworks: [{ name: 'Spring Boot', version: '4.1.2', runtime: 'Java' }],
   });
 
@@ -196,4 +200,51 @@ test('a repository with no applicable criteria returns a safe deterministic scor
   const result = calculateHealthScore(repo, meta);
   assert.equal(typeof result.score, 'number');
   assert.ok(!Number.isNaN(result.score));
+});
+
+const criterion = (result, id) => result.criteria.find(c => c.id === id);
+
+test('without CI the CI criteria are not applicable and a repo can still reach 100', () => {
+  const result = calculateHealthScore(makeRepo(), makeMeta({ hasCI: false, ciRunSuccessRate: null, checkoutMajors: [] }));
+  for (const id of ['ci-runs', 'ci-checkout']) {
+    assert.equal(criterion(result, id).applicable, false);
+    assert.equal(criterion(result, id).score, null);
+  }
+  assert.equal(result.score, 100);
+});
+
+test('a failed CI run or outdated actions/checkout reduces the score', () => {
+  const failed = calculateHealthScore(makeRepo(), makeMeta({ ciRunSuccessRate: 0 }));
+  assert.equal(criterion(failed, 'ci-runs').score, 0);
+  assert.ok(failed.score < 100);
+
+  const outdated = calculateHealthScore(makeRepo(), makeMeta({ checkoutMajors: [3, 5], latestCheckoutMajor: 5 }));
+  assert.equal(criterion(outdated, 'ci-checkout').score, 50);
+  assert.ok(outdated.score < 100);
+
+  const fallback = calculateHealthScore(makeRepo(), makeMeta({ checkoutMajors: [4], latestCheckoutMajor: undefined }));
+  assert.equal(criterion(fallback, 'ci-checkout').score, 0);
+});
+
+test('license with an old copyright year is penalized, the current year scores 100', () => {
+  const old = calculateHealthScore(makeRepo(), makeMeta({ licenseYear: 2021 }), { currentYear: 2026 });
+  assert.equal(criterion(old, 'license').score, 50);
+  const current = calculateHealthScore(makeRepo(), makeMeta({ licenseYear: 2026 }), { currentYear: 2026 });
+  assert.equal(criterion(current, 'license').score, 100);
+  const unknown = calculateHealthScore(makeRepo(), makeMeta({ licenseYear: null }), { currentYear: 2026 });
+  assert.equal(criterion(unknown, 'license').score, 50);
+  const none = calculateHealthScore(makeRepo({ license: null }), makeMeta(), { currentYear: 2026 });
+  assert.equal(criterion(none, 'license').score, 0);
+});
+
+test('license year and checkout versions are parsed', () => {
+  assert.equal(detectLicenseYear('MIT License\n\nCopyright (c) 2021 Foo'), 2021);
+  assert.equal(detectLicenseYear('Copyright (c) 2021-2026 Foo'), 2026);
+  assert.equal(detectLicenseYear('no year here'), null);
+  assert.deepEqual(detectCheckoutMajors('- uses: actions/checkout@v4\n- uses: "actions/checkout@v5.1.0"\n- uses: actions/setup-node@v4'), [4, 5]);
+});
+
+test('the dependency management criterion no longer exists', () => {
+  const result = calculateHealthScore(makeRepo(), makeMeta({ hasMavenConfig: true }));
+  assert.equal(criterion(result, 'maven-dependency-management'), undefined);
 });

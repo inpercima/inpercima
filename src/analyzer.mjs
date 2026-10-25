@@ -2,7 +2,10 @@
  * Repository analyzer: extracts version info and calculates health scores.
  */
 
-import { fetchFileContent, fetchLanguages } from './api.mjs';
+import { fetchFileContent, fetchLanguages, fetchWorkflowRuns, fetchWorkflowFiles, fetchLatestCheckoutMajor } from './api.mjs';
+
+/** Fallback major version of `actions/checkout` if the latest release cannot be fetched. */
+export const FALLBACK_CHECKOUT_MAJOR = 5;
 
 /**
  * Central policy for version-based scoring. Each entry is an ordered list of
@@ -216,15 +219,6 @@ function detectJavaVersion(pomXml) {
 }
 
 /**
- * Detect whether pom.xml defines a <dependencyManagement> section.
- * @param {string} pomXml
- * @returns {boolean}
- */
-function detectDependencyManagement(pomXml) {
-  return /<dependencyManagement>/.test(pomXml);
-}
-
-/**
  * Calculate the weighted average score for a list of criteria.
  * Only criteria marked `applicable` contribute to the result. Each
  * criterion's `contribution` (score * weight) is recorded for transparency.
@@ -244,13 +238,68 @@ function calculateWeightedScore(criteria) {
 }
 
 /**
+ * Extract the (latest) copyright year from the text of a LICENSE file.
+ * A range like `2021-2026` yields its end year.
+ * @param {string|null} licenseText
+ * @returns {number|null}
+ */
+export function detectLicenseYear(licenseText) {
+  if (!licenseText) return null;
+  const line = licenseText.split(/\r?\n/).find(l => /copyright|\(c\)|©/i.test(l) && /(?:19|20)\d{2}/.test(l));
+  if (!line) return null;
+  const years = line.match(/(?:19|20)\d{2}/g).map(Number);
+  return Math.max(...years);
+}
+
+/**
+ * Parse the major versions of all `uses: actions/checkout@<ref>` entries.
+ * Refs that are no version tag (branch, SHA) are ignored.
+ * @param {string} workflowText
+ * @returns {number[]}
+ */
+export function detectCheckoutMajors(workflowText) {
+  const majors = [];
+  for (const match of workflowText.matchAll(/uses:\s*['"]?actions\/checkout@v(\d+)/g)) {
+    majors.push(Number(match[1]));
+  }
+  return majors;
+}
+
+/**
+ * Score for `actions/checkout`: share of usages on the current major version
+ * (or newer). No detectable usage means nothing is outdated: 100.
+ * @param {number[]|undefined} majors
+ * @param {number|undefined} latestMajor
+ * @returns {number}
+ */
+function scoreCheckout(majors, latestMajor) {
+  if (!majors || majors.length === 0) return 100;
+  const latest = latestMajor ?? FALLBACK_CHECKOUT_MAJOR;
+  const current = majors.filter(major => major >= latest).length;
+  return Math.round((current / majors.length) * 100);
+}
+
+/**
+ * Score for the license: absent 0; present with current-year copyright 100;
+ * present with an older or undetectable year 50.
+ * @param {object} repo
+ * @param {object} meta
+ * @param {number} currentYear
+ * @returns {number}
+ */
+function scoreLicense(repo, meta, currentYear) {
+  if (!repo.license) return 0;
+  return meta.licenseYear === currentYear ? 100 : 50;
+}
+
+/**
  * Build the criteria that apply to (almost) every repository, regardless of
  * technology stack.
  * @param {object} repo
  * @param {object} meta
  * @returns {Array<object>}
  */
-function buildGeneralCriteria(repo, meta) {
+function buildGeneralCriteria(repo, meta, currentYear) {
   const daysSinceUpdate = (Date.now() - new Date(repo.pushed_at).getTime()) / (1000 * 60 * 60 * 24);
   let activityScore = 0;
   if (daysSinceUpdate < 30) activityScore = 100;
@@ -284,19 +333,27 @@ function buildGeneralCriteria(repo, meta) {
       weight: 10,
     },
     {
-      id: 'ci',
+      id: 'ci-runs',
       category: 'general',
-      label: 'CI/CD',
-      applicable: true,
-      score: meta.hasCI ? 100 : 0,
-      weight: 20,
+      label: 'CI/CD runs successful',
+      applicable: Boolean(meta.hasCI),
+      score: meta.hasCI ? Math.round((meta.ciRunSuccessRate ?? 0) * 100) : null,
+      weight: 10,
+    },
+    {
+      id: 'ci-checkout',
+      category: 'general',
+      label: 'actions/checkout up to date',
+      applicable: Boolean(meta.hasCI),
+      score: meta.hasCI ? scoreCheckout(meta.checkoutMajors, meta.latestCheckoutMajor) : null,
+      weight: 10,
     },
     {
       id: 'license',
       category: 'general',
       label: 'License',
       applicable: true,
-      score: repo.license ? 100 : 0,
+      score: scoreLicense(repo, meta, currentYear),
       weight: 10,
     },
     {
@@ -386,14 +443,6 @@ function buildTechnologyCriteria(meta) {
       weight: 15,
     },
     {
-      id: 'maven-dependency-management',
-      category: 'maven',
-      label: 'Dependency management configured',
-      applicable: technologies.maven,
-      score: technologies.maven ? (meta.hasDependencyManagement ? 100 : 0) : null,
-      weight: 5,
-    },
-    {
       id: 'java-version',
       category: 'java',
       label: 'Java version',
@@ -438,12 +487,14 @@ function detectTechnologies(meta) {
  * penalized for lacking Angular, Maven or Java.
  * @param {object} repo  Raw GitHub repo object
  * @param {object} meta  Derived metadata (hasCI, hasReadme, etc.)
+ * @param {{currentYear?: number}} [options]  `currentYear` can be injected for testing
  * @returns {{score: number, technologies: Record<string, boolean>, criteria: Array<object>}}
  */
-export function calculateHealthScore(repo, meta) {
+export function calculateHealthScore(repo, meta, options = {}) {
+  const currentYear = options.currentYear ?? new Date().getFullYear();
   const technologies = detectTechnologies(meta);
 
-  const criteria = [...buildGeneralCriteria(repo, meta), ...buildTechnologyCriteria({ ...meta, technologies })].map(
+  const criteria = [...buildGeneralCriteria(repo, meta, currentYear), ...buildTechnologyCriteria({ ...meta, technologies })].map(
     criterion => ({
       ...criterion,
       contribution: criterion.applicable ? criterion.score * criterion.weight : 0,
@@ -453,6 +504,18 @@ export function calculateHealthScore(repo, meta) {
   const score = calculateWeightedScore(criteria);
 
   return { score, technologies, criteria };
+}
+
+let latestCheckoutMajorPromise = null;
+
+/**
+ * Latest `actions/checkout` major version (fetched once, with fallback).
+ * @param {string|undefined} token
+ * @returns {Promise<number>}
+ */
+function getLatestCheckoutMajor(token) {
+  latestCheckoutMajorPromise ??= fetchLatestCheckoutMajor(token).then(major => major ?? FALLBACK_CHECKOUT_MAJOR);
+  return latestCheckoutMajorPromise;
 }
 
 /**
@@ -467,12 +530,15 @@ export async function analyzeRepo(username, repo, token) {
   const meta = {
     hasReadme: false,
     hasCI: false,
+    ciRunSuccessRate: null,
+    checkoutMajors: [],
+    latestCheckoutMajor: null,
+    licenseYear: null,
     hasJavaCI: false,
     hasPackageJson: false,
     hasPackageScripts: false,
     hasAngularTooling: false,
     hasMavenConfig: false,
-    hasDependencyManagement: false,
     hasPhpConfig: false,
     angular: null,
     nodeVersion: null,
@@ -501,6 +567,10 @@ export async function analyzeRepo(username, repo, token) {
     phpConfig,
     dockerCompose,
     languagesData,
+    workflowFiles,
+    workflowRuns,
+    latestCheckoutMajor,
+    licenseFiles,
   ] = await Promise.all([
     fetchFileContent(username, name, 'package.json', token),
     fetchFileContent(username, name, 'frontend/package.json', token),
@@ -514,10 +584,26 @@ export async function analyzeRepo(username, repo, token) {
     fetchFileContent(username, name, 'api/config/config.default.php', token),
     fetchFileContent(username, name, 'docker-compose.yml', token),
     fetchLanguages(username, name, token),
+    fetchWorkflowFiles(username, name, token),
+    fetchWorkflowRuns(username, name, token),
+    getLatestCheckoutMajor(token),
+    Promise.all(['LICENSE', 'LICENSE.md', 'LICENSE.txt'].map(file => fetchFileContent(username, name, file, token))),
   ]);
 
   meta.hasReadme = readmeText !== null;
-  meta.hasCI = nodeCi !== null || javaCi !== null;
+  meta.hasCI = workflowFiles.length > 0 || nodeCi !== null || javaCi !== null;
+  const workflowTexts = workflowFiles.length > 0 ? workflowFiles.map(f => f.content) : [nodeCi, javaCi];
+  meta.checkoutMajors = workflowTexts.filter(Boolean).flatMap(detectCheckoutMajors);
+  meta.latestCheckoutMajor = latestCheckoutMajor;
+  const latestRunPerWorkflow = new Map();
+  for (const run of [...workflowRuns].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))) {
+    if (!latestRunPerWorkflow.has(run.workflow_id)) latestRunPerWorkflow.set(run.workflow_id, run);
+  }
+  if (latestRunPerWorkflow.size > 0) {
+    const successful = [...latestRunPerWorkflow.values()].filter(run => run.conclusion === 'success').length;
+    meta.ciRunSuccessRate = successful / latestRunPerWorkflow.size;
+  }
+  meta.licenseYear = detectLicenseYear(licenseFiles.find(text => text !== null) ?? null);
   meta.hasJavaCI = javaCi !== null;
   meta.languages = Object.keys(languagesData).sort((a, b) => languagesData[b] - languagesData[a]);
   const totalBytes = Object.values(languagesData).reduce((sum, b) => sum + b, 0);
@@ -567,7 +653,6 @@ export async function analyzeRepo(username, repo, token) {
       meta.mavenVersion = detectMavenVersion(pomXml);
     }
     meta.javaVersion = detectJavaVersion(pomXml);
-    meta.hasDependencyManagement = detectDependencyManagement(pomXml);
     const javaFramework = detectJavaFramework(pomXml);
     if (javaFramework) {
       javaFrameworks.push({ name: javaFramework, version: detectJavaFrameworkVersion(pomXml, javaFramework), runtime: 'Java' });

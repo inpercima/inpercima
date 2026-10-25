@@ -78,13 +78,21 @@ General criteria apply to every repository. Technology-specific criteria apply o
 | Criterion | Scoring | Weight |
 | --------- | ------- | :----: |
 | Recent activity | Last push less than 30 days ago: 100; less than 90 days: 70; less than 180 days: 40; less than 365 days: 15; otherwise: 0 | 30 |
-| CI/CD | Recognized CI workflow detected: 100; otherwise: 0 | 20 |
 | Description | Present: 100; absent: 0 | 10 |
 | README | Present: 100; absent: 0 | 10 |
-| License | Present: 100; absent: 0 | 10 |
+| License | Absent: 0; present with the copyright year (from `LICENSE`, `LICENSE.md` or `LICENSE.txt`, end year of a range) equal to the current year: 100; present with an older or undetectable year: 50 | 10 |
 | Topics | At least one: 100; none: 0 | 10 |
 
-These criteria have a combined weight of 90.
+These criteria have a combined weight of 70.
+
+CI/CD is optional. If the repository has CI workflows (files in `.github/workflows`, falling back to `node_ci.yml`/`java_ci.yaml`), two additional criteria apply; without CI they are not applicable and neither penalize nor count towards the weight:
+
+| Criterion | Scoring | Weight |
+| --------- | ------- | :----: |
+| CI/CD runs successful | Share of workflows whose latest completed run has `conclusion === 'success'` (×100); no runs found: 0 | 10 |
+| actions/checkout up to date | Share of `uses: actions/checkout@vX` entries on the latest major version (fetched from the `actions/checkout` latest release, fallback `FALLBACK_CHECKOUT_MAJOR`) (×100); no entries: 100 | 10 |
+
+With CI the general criteria have a combined weight of 90.
 
 #### Technology-specific criteria
 
@@ -98,7 +106,6 @@ These criteria have a combined weight of 90.
 | PHP | PHP version | Version policy below | 15 |
 | PHP | PHP configuration | PHP configuration file detected: 100; otherwise: 0 | 5 |
 | Maven | Maven version | Version policy below | 15 |
-| Maven | Dependency management | `<dependencyManagement>` detected in `pom.xml`: 100; otherwise: 0 | 5 |
 | Java | Java version | Version policy below | 15 |
 | Java | Java build configuration | Java CI workflow or a recognized Java framework detected: 100; otherwise: 0 | 5 |
 
@@ -129,7 +136,7 @@ totalWeight = sum(weight)
 healthScore = min(100, max(0, round(totalScore / totalWeight)))
 ```
 
-If no criteria apply, the score is 0. The total weight varies by repository: Maven and Java each add 20, Angular adds 20, Node.js adds 20, PHP adds 20, and pnpm adds 10. `analyzeRepo()` exposes the score as `meta.healthScore` and the detailed result as `meta.health = { score, technologies, criteria }`.
+If no criteria apply, the score is 0. The total weight varies by repository: Maven adds 15, Java adds 20, CI/CD adds 20, Angular adds 20, Node.js adds 20, PHP adds 20, and pnpm adds 10. `analyzeRepo()` exposes the score as `meta.healthScore` and the detailed result as `meta.health = { score, technologies, criteria }`.
 
 #### Worked examples
 
@@ -139,24 +146,24 @@ These illustrative inputs demonstrate the formula; they are not claims about cur
 
 | Criteria | Illustrative scores × weights | Contribution |
 | -------- | ----------------------------- | :----------: |
-| General | 70×30 + 100×20 + 100×10 + 100×10 + 100×10 + 0×10 | 7,100 |
-| Maven | 100×15 + 100×5 | 2,000 |
+| General (incl. CI) | 70×30 + 100×10 + 100×10 + 100×10 + 100×10 + 100×10 + 0×10 | 7,100 |
+| Maven | 100×15 | 1,500 |
 | Java | 90×15 + 0×5 | 1,350 |
-| **Total** | **Total weight: 90 + 20 + 20 = 130** | **10,450** |
+| **Total** | **Total weight: 90 + 15 + 20 = 125** | **9,950** |
 
-`round(10,450 / 130) = 80`
+`round(9,950 / 125) = 80`
 
 **Example with Node.js, pnpm, and Angular detected**
 
 | Criteria | Illustrative scores × weights | Contribution |
 | -------- | ----------------------------- | :----------: |
-| General | 100×30 + 100×20 + 100×10 + 100×10 + 100×10 + 100×10 | 9,000 |
+| General (no CI) | 100×30 + 100×10 + 100×10 + 100×10 + 100×10 | 7,000 |
 | Node.js | 90×15 + 100×5 | 1,850 |
 | pnpm | 80×10 | 800 |
 | Angular | 90×15 + 100×5 | 1,850 |
-| **Total** | **Total weight: 90 + 20 + 10 + 20 = 140** | **13,500** |
+| **Total** | **Total weight: 70 + 20 + 10 + 20 = 120** | **11,500** |
 
-`round(13,500 / 140) = 96`
+`round(11,500 / 120) = 96`
 
 ### CI/CD
 
