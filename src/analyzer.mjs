@@ -574,9 +574,13 @@ export async function analyzeRepo(username, repo, token) {
     Promise.all(['LICENSE', 'LICENSE.md', 'LICENSE.txt'].map(file => fetchFileContent(username, name, file, token))),
   ]);
 
+  console.log(repo.name);
+  console.log(nodeCi);
+  console.log(javaCi);
   meta.hasReadme = readmeText !== null;
   meta.hasCI = nodeCi !== null || javaCi !== null;
   meta.checkoutMajors = [nodeCi, javaCi].filter(Boolean).flatMap(detectCheckoutMajors);
+  console.log(meta.checkoutMajors);
   meta.latestCheckoutMajor = latestCheckoutMajor;
   const latestRunPerWorkflow = new Map();
   for (const run of [...workflowRuns].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))) {
