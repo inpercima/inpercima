@@ -305,12 +305,20 @@ test('a failed CI run or outdated actions/checkout reduces the score', () => {
   assert.equal(criterion(failed, 'ci-runs').score, 0);
   assert.ok(failed.score < 100);
 
-  const outdated = calculateHealthScore(makeRepo(), makeMeta({ checkoutMajors: [3, 5], latestCheckoutMajor: 5 }));
+  const outdated = calculateHealthScore(makeRepo(), makeMeta({ checkoutMajors: [2, 5], latestCheckoutMajor: 5 }));
   assert.equal(criterion(outdated, 'ci-checkout').score, 50);
   assert.ok(outdated.score < 100);
 
   const fallback = calculateHealthScore(makeRepo(), makeMeta({ checkoutMajors: [4], latestCheckoutMajor: undefined }));
-  assert.equal(criterion(fallback, 'ci-checkout').score, 0);
+  assert.equal(criterion(fallback, 'ci-checkout').score, 90);
+});
+
+test('actions/checkout is scored in steps relative to the latest major', () => {
+  const cases = [[[7], 100], [[8], 100], [[6], 90], [[5], 70], [[4], 0], [[3], 0], [[6, 6], 90], [[7, 5], 85], [[], 100]];
+  for (const [checkoutMajors, expected] of cases) {
+    const result = calculateHealthScore(makeRepo(), makeMeta({ checkoutMajors, latestCheckoutMajor: 7 }));
+    assert.equal(criterion(result, 'ci-checkout').score, expected, JSON.stringify(checkoutMajors));
+  }
 });
 
 test('license with an old copyright year is penalized, the current year scores 100', () => {
