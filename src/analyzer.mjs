@@ -8,10 +8,11 @@ import { fetchFileContent, fetchLanguages, fetchWorkflowRuns, fetchLatestCheckou
 export const FALLBACK_CHECKOUT_MAJOR = 5;
 
 /**
- * Scoring for `actions/checkout`: ordered `[offsetFromLatestMajor, score]` pairs.
- * Versions older than the last offset score 0.
+ * Scoring for `actions/checkout`: ordered `[minimumMajor, score]` pairs (highest
+ * first), written for the reference major in the first entry. If a different
+ * latest major is known, the policy is shifted accordingly. Older versions score 0.
  */
-const CHECKOUT_POLICY = [[0, 100], [1, 90], [2, 70]];
+const CHECKOUT_POLICY = [[7, 100], [6, 90], [5, 70]];
 
 /**
  * Central policy for version-based scoring. Each entry is an ordered list of
@@ -272,8 +273,8 @@ export function detectCheckoutMajors(workflowText) {
 }
 
 /**
- * Score for `actions/checkout`: each usage is rated by its distance to the
- * latest major version (see CHECKOUT_POLICY); the result is the rounded average
+ * Score for `actions/checkout`: each usage is rated against the
+ * versions in CHECKOUT_POLICY, shifted to the latest major version; the result is the rounded average
  * over all usages. No detectable usage means nothing is outdated: 100.
  * @param {number[]|undefined} majors
  * @param {number|undefined} latestMajor
@@ -282,8 +283,9 @@ export function detectCheckoutMajors(workflowText) {
 function scoreCheckout(majors, latestMajor) {
   if (!majors || majors.length === 0) return 100;
   const latest = latestMajor ?? FALLBACK_CHECKOUT_MAJOR;
+  const shift = latest - CHECKOUT_POLICY[0][0];
   const total = majors.reduce((sum, major) => {
-    const entry = CHECKOUT_POLICY.find(([offset]) => major >= latest - offset);
+    const entry = CHECKOUT_POLICY.find(([minMajor]) => major >= minMajor + shift);
     return sum + (entry ? entry[1] : 0);
   }, 0);
   return Math.round(total / majors.length);
