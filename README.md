@@ -8,7 +8,7 @@
 
 | 🗂️ Repositories | ⭐ Total Stars | 💚 Avg. Health Score |
 | :-: | :-: | :-: |
-| **22** | **21** | **76 / 100** |
+| **22** | **21** | **80 / 100** |
 
 ## 🏷️ Primary Languages
 
@@ -34,10 +34,10 @@
 
 | Repository | Language | Stars | Health |
 | ---------- | -------- | :---: | :----: |
-| [light-js](https://github.com/inpercima/light-js) | JavaScript | ⭐ 0 | 🟢 99 |
-| [davengo-results](https://github.com/inpercima/davengo-results) | TypeScript | ⭐ 0 | 🟢 98 |
-| [explore-tmdb](https://github.com/inpercima/explore-tmdb) | TypeScript | ⭐ 0 | 🟢 98 |
-| [mc-status](https://github.com/inpercima/mc-status) | TypeScript | ⭐ 0 | 🟢 98 |
-| [mdrza-ranking](https://github.com/inpercima/mdrza-ranking) | TypeScript | ⭐ 0 | 🟢 98 |
+| [starter-playground](https://github.com/inpercima/starter-playground) | HTML | ⭐ 0 | 🟢 100 |
+| [mittagstisch](https://github.com/inpercima/mittagstisch) | Java | ⭐ 3 | 🟢 92 |
+| [server-connector](https://github.com/inpercima/server-connector) | Java | ⭐ 2 | 🟢 91 |
+| [davengo-results](https://github.com/inpercima/davengo-results) | TypeScript | ⭐ 0 | 🟢 91 |
+| [mc-status](https://github.com/inpercima/mc-status) | TypeScript | ⭐ 0 | 🟢 91 |
 
 > For details on how dashboard values—especially health scores—are calculated, see [README_PROJECT.md](README_PROJECT.md).
