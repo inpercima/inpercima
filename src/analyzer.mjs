@@ -273,6 +273,7 @@ export function detectCheckoutMajors(workflowText) {
  * @returns {number}
  */
 function scoreCheckout(majors, latestMajor) {
+  console.log(majors, latestMajor);
   if (!majors || majors.length === 0) return 100;
   const latest = latestMajor ?? FALLBACK_CHECKOUT_MAJOR;
   const current = majors.filter(major => major >= latest).length;
@@ -574,13 +575,9 @@ export async function analyzeRepo(username, repo, token) {
     Promise.all(['LICENSE', 'LICENSE.md', 'LICENSE.txt'].map(file => fetchFileContent(username, name, file, token))),
   ]);
 
-  console.log(repo.name);
-  console.log(nodeCi);
-  console.log(javaCi);
   meta.hasReadme = readmeText !== null;
   meta.hasCI = nodeCi !== null || javaCi !== null;
   meta.checkoutMajors = [nodeCi, javaCi].filter(Boolean).flatMap(detectCheckoutMajors);
-  console.log(meta.checkoutMajors);
   meta.latestCheckoutMajor = latestCheckoutMajor;
   const latestRunPerWorkflow = new Map();
   for (const run of [...workflowRuns].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))) {
