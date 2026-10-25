@@ -34,7 +34,6 @@ function makeMeta(overrides = {}) {
     hasJavaCI: false,
     hasPackageJson: false,
     hasPackageScripts: false,
-    hasAngularTooling: false,
     hasMavenConfig: false,
     angular: null,
     nodeVersion: null,
@@ -75,7 +74,6 @@ test('an Angular repository receives Angular-specific criteria', () => {
   const meta = makeMeta({
     hasPackageJson: true,
     angular: '22.0.0',
-    hasAngularTooling: true,
     hasPackageScripts: true,
     nodeVersion: '26.0.0',
   });
@@ -87,10 +85,7 @@ test('an Angular repository receives Angular-specific criteria', () => {
   assert.ok(angularVersion);
   assert.equal(angularVersion.applicable, true);
   assert.equal(angularVersion.score, 100);
-
-  const angularTooling = result.criteria.find(c => c.id === 'angular-tooling');
-  assert.equal(angularTooling.applicable, true);
-  assert.equal(angularTooling.score, 100);
+  assert.equal(result.criteria.find(c => c.id === 'angular-tooling'), undefined);
 });
 
 test('a Maven/Java repository receives Maven and Java-specific criteria', () => {
@@ -126,9 +121,8 @@ test('Java framework and Java version are labelled separately', () => {
       { name: 'Angular', version: '20.1.0' },
       { name: 'Spring Boot', version: '4.1.2', runtime: 'Java' },
       { name: 'Java', version: '21' },
-      { name: 'Quarkus', version: null, runtime: 'Java' },
     ]),
-    'Angular (20.1.0), Spring Boot (4.1.2), Java (21), Quarkus',
+    'Angular (20.1.0), Spring Boot (4.1.2), Java (21)',
   );
 });
 
@@ -138,7 +132,6 @@ test('Spring Boot version is read from the parent, falling back to the property'
   assert.equal(detectJavaFrameworkVersion(parent + prop, 'Spring Boot'), '4.1.2');
   assert.equal(detectJavaFrameworkVersion(prop, 'Spring Boot'), '3.5.0');
   assert.equal(detectJavaFrameworkVersion('<project/>', 'Spring Boot'), null);
-  assert.equal(detectJavaFrameworkVersion(parent, 'Quarkus'), null);
 });
 
 test('a present technology with a missing version is scored distinctly from an absent technology', () => {

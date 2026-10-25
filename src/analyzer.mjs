@@ -2,7 +2,7 @@
  * Repository analyzer: extracts version info and calculates health scores.
  */
 
-import { fetchFileContent, fetchLanguages, fetchWorkflowRuns, fetchWorkflowFiles, fetchLatestCheckoutMajor } from './api.mjs';
+import { fetchFileContent, fetchLanguages, fetchWorkflowRuns, fetchLatestCheckoutMajor } from './api.mjs';
 
 /** Fallback major version of `actions/checkout` if the latest release cannot be fetched. */
 export const FALLBACK_CHECKOUT_MAJOR = 5;
@@ -91,16 +91,6 @@ function detectAngular(pkg) {
 }
 
 /**
- * Detect whether Angular CLI/build tooling is configured in package.json.
- * @param {object} pkg
- * @returns {boolean}
- */
-function detectAngularTooling(pkg) {
-  const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-  return Boolean(deps?.['@angular/cli'] || deps?.['@angular-devkit/build-angular']);
-}
-
-/**
  * Extract Node.js engine requirement from package.json content.
  * @param {object} pkg
  * @returns {string|null}
@@ -184,9 +174,6 @@ function detectMavenVersion(pomXml) {
  */
 function detectJavaFramework(content) {
   if (/spring-boot/i.test(content)) return 'Spring Boot';
-  if (/quarkus/i.test(content)) return 'Quarkus';
-  if (/micronaut/i.test(content)) return 'Micronaut';
-  if (/helidon/i.test(content)) return 'Helidon';
   return null;
 }
 
@@ -395,28 +382,12 @@ function buildTechnologyCriteria(meta) {
       weight: 15,
     },
     {
-      id: 'angular-tooling',
-      category: 'angular',
-      label: 'Angular CLI/build tooling',
-      applicable: technologies.angular,
-      score: technologies.angular ? (meta.hasAngularTooling ? 100 : 0) : null,
-      weight: 5,
-    },
-    {
       id: 'php-version',
       category: 'php',
       label: 'PHP version',
       applicable: technologies.php,
       score: technologies.php ? scoreVersion(meta.phpVersion, 'php') : null,
       weight: 15,
-    },
-    {
-      id: 'php-config',
-      category: 'php',
-      label: 'PHP configuration',
-      applicable: technologies.php,
-      score: technologies.php ? (meta.hasPhpConfig ? 100 : 0) : null,
-      weight: 5,
     },
     {
       id: 'maven-version',
@@ -538,9 +509,7 @@ export async function analyzeRepo(username, repo, token) {
     hasJavaCI: false,
     hasPackageJson: false,
     hasPackageScripts: false,
-    hasAngularTooling: false,
     hasMavenConfig: false,
-    hasPhpConfig: false,
     angular: null,
     nodeVersion: null,
     pnpmVersion: null,
@@ -565,10 +534,8 @@ export async function analyzeRepo(username, repo, token) {
     readmeText,
     nodeCi,
     javaCi,
-    phpConfig,
     dockerCompose,
     languagesData,
-    workflowFiles,
     workflowRuns,
     latestCheckoutMajor,
     licenseFiles,
@@ -582,19 +549,16 @@ export async function analyzeRepo(username, repo, token) {
     fetchFileContent(username, name, 'README.md', token),
     fetchFileContent(username, name, '.github/workflows/node_ci.yml', token),
     fetchFileContent(username, name, '.github/workflows/java_ci.yaml', token),
-    fetchFileContent(username, name, 'api/config/config.default.php', token),
     fetchFileContent(username, name, 'docker-compose.yml', token),
     fetchLanguages(username, name, token),
-    fetchWorkflowFiles(username, name, token),
     fetchWorkflowRuns(username, name, token),
     getLatestCheckoutMajor(token),
     Promise.all(['LICENSE', 'LICENSE.md', 'LICENSE.txt'].map(file => fetchFileContent(username, name, file, token))),
   ]);
 
   meta.hasReadme = readmeText !== null;
-  meta.hasCI = workflowFiles.length > 0 || nodeCi !== null || javaCi !== null;
-  const workflowTexts = workflowFiles.length > 0 ? workflowFiles.map(f => f.content) : [nodeCi, javaCi];
-  meta.checkoutMajors = workflowTexts.filter(Boolean).flatMap(detectCheckoutMajors);
+  meta.hasCI = nodeCi !== null || javaCi !== null;
+  meta.checkoutMajors = [nodeCi, javaCi].filter(Boolean).flatMap(detectCheckoutMajors);
   meta.latestCheckoutMajor = latestCheckoutMajor;
   const latestRunPerWorkflow = new Map();
   for (const run of [...workflowRuns].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))) {
@@ -623,13 +587,11 @@ export async function analyzeRepo(username, repo, token) {
       meta.angular = detectAngular(pkg);
       meta.nodeVersion = detectNodeVersion(pkg);
       meta.hasPackageScripts = detectPackageScripts(pkg);
-      meta.hasAngularTooling = detectAngularTooling(pkg);
 
       if (meta.angular === null && frontendPackageJson !== null) {
         // If root package.json doesn't have Angular, check frontend one
         const frontendPkg = JSON.parse(frontendPackageJson);
         meta.angular = detectAngular(frontendPkg);
-        meta.hasAngularTooling = meta.hasAngularTooling || detectAngularTooling(frontendPkg);
       }
     } catch {
       // Malformed package.json – skip
@@ -663,17 +625,9 @@ export async function analyzeRepo(username, repo, token) {
     }
   }
 
-  // PHP detection: check docker-compose.yml first, then fallback to config file
+  // PHP detection: only via a PHP image in docker-compose.yml
   if (dockerCompose !== null) {
     meta.phpVersion = detectPhpVersionFromDockerCompose(dockerCompose);
-  }
-  meta.hasPhpConfig = phpConfig !== null;
-  if (meta.hasPhpConfig && !meta.phpVersion) {
-    // If we have PHP config but no version from docker-compose, mark as PHP detected
-    meta.phpVersion = 'unknown';
-  }
-  if (!meta.phpVersion && meta.languages.includes('PHP')) {
-    meta.phpVersion = 'unknown';
   }
 
   meta.hasAngular = meta.angular !== null;
