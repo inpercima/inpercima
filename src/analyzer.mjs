@@ -12,7 +12,7 @@ export const FALLBACK_CHECKOUT_MAJOR = 5;
  * first), written for the reference major in the first entry. If a different
  * latest major is known, the policy is shifted accordingly. Older versions score 0.
  */
-const CHECKOUT_POLICY = [[7, 100], [6, 90], [5, 70]];
+const CHECKOUT_POLICY = [[7, 100], [6, 90], [5, 80]];
 
 /**
  * Central policy for version-based scoring. Each entry is an ordered list of
@@ -43,8 +43,8 @@ const VERSION_POLICIES = {
   php: [
     [8.2, 100],
     [8.1, 90],
-    [8.0, 75],
-    [7.4, 50],
+    [8.0, 80],
+    [7.4, 70],
   ],
   maven: [
     [3.9, 100],
@@ -52,11 +52,10 @@ const VERSION_POLICIES = {
     [3.6, 70],
   ],
   java: [
-    [27, 100],
-    [25, 90],
-    [21, 80],
-    [17, 70],
-    [11, 50],
+    [25, 100],
+    [21, 90],
+    [17, 80],
+    [11, 70],
   ],
 };
 
