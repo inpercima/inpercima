@@ -104,6 +104,8 @@ General criteria always apply and keep a combined weight of 70.
 
 Node.js is detected from a root or `frontend/package.json`; Angular is detected from `@angular/core` in either file; pnpm is detected when a `pnpm@<version>` string is present in the README. PHP and its version are detected only from a recognized PHP image in the root `docker-compose.yml`. CI/CD is detected from the CI workflow files `.github/workflows/node_ci.yml` and `.github/workflows/java_ci.yaml`. Maven and Java are both detected from a root/backend `pom.xml` or Maven wrapper. The only recognized Java framework is Spring Boot. For a detected technology, its criteria apply even when a value is missing.
 
+The Node.js version comes from the Node runtime in `devEngines.runtime.version`, falling back to `engines.node` when no Node development runtime version is declared. The root `package.json` takes precedence over `frontend/package.json`.
+
 The HTML dashboard lists Node.js, pnpm, Maven, and Maven Wrapper versions in the **Frameworks** column alongside the detected frameworks and technologies. The Maven Wrapper version is read from `mvnw.cmd` in the repository root, falling back to `backend/mvnw.cmd`.
 
 #### Version policies

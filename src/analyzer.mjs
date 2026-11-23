@@ -97,12 +97,15 @@ function detectAngular(pkg) {
 }
 
 /**
- * Extract Node.js engine requirement from package.json content.
+ * Extract the Node.js development runtime or engine requirement from package.json.
  * @param {object} pkg
  * @returns {string|null}
  */
 function detectNodeVersion(pkg) {
-  const version = pkg?.engines?.node;
+  const runtime = pkg?.devEngines?.runtime;
+  const runtimes = Array.isArray(runtime) ? runtime : [runtime];
+  const nodeRuntime = runtimes.find(entry => entry?.name === 'node' && typeof entry.version === 'string' && entry.version.trim());
+  const version = nodeRuntime?.version || pkg?.engines?.node;
   if (!version) return null;
   return version.replace(/[\^~>=<]/g, '').replace('>=', '').trim();
 }

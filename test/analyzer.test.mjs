@@ -203,6 +203,29 @@ test('analyzeRepo builds the framework label in the requested order using root m
     });
     assert.equal(backendWrapper.meta.mavenWrapperVersion, '9.9.9');
     assert.equal(backendWrapper.meta.hasMavenConfig, true);
+
+    const nodeCases = [
+      [{ engines: { node: '>=24' }, devEngines: { runtime: { name: 'node', version: '^26.0.0' } } }, '26.0.0', 100],
+      [{ engines: { node: '>=24' }, devEngines: { runtime: [{ name: 'deno', version: '2' }, { name: 'node', version: '^26.0.0' }] } }, '26.0.0', 100],
+      [{ engines: { node: '>=24' }, devEngines: { runtime: { name: 'deno', version: '26' } } }, '24', 90],
+      [{ engines: { node: '>=24' } }, '24', 90],
+      [{ devEngines: { runtime: { name: 'node', version: 'not-a-version' } } }, 'not-a-version', 40],
+      [{}, null, 0],
+    ];
+    for (const [pkg, expectedVersion, expectedScore] of nodeCases) {
+      fileContents['package.json'] = JSON.stringify(pkg);
+      const { meta: nodeMeta } = await analyzeRepo('test', makeRepo({ name: 'repo' }));
+      assert.equal(nodeMeta.nodeVersion, expectedVersion);
+      assert.equal(nodeMeta.health.criteria.find(c => c.id === 'node-version').score, expectedScore);
+    }
+
+    delete fileContents['package.json'];
+    fileContents['frontend/package.json'] = JSON.stringify({
+      devEngines: { runtime: { name: 'node', version: '^26.0.0' } },
+    });
+    const { meta: frontendMeta } = await analyzeRepo('test', makeRepo({ name: 'repo' }));
+    assert.equal(frontendMeta.nodeVersion, '26.0.0');
+    assert.equal(frontendMeta.health.criteria.find(c => c.id === 'node-version').score, 100);
   } finally {
     globalThis.fetch = originalFetch;
   }
