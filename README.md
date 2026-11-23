@@ -8,7 +8,7 @@
 
 | 🗂️ Repositories | ⭐ Total Stars | 💚 Avg. Health Score |
 | :-: | :-: | :-: |
-| **22** | **22** | **83 / 100** |
+| **22** | **22** | **82 / 100** |
 
 ## 🏷️ Primary Languages
 
@@ -34,10 +34,10 @@
 
 | Repository | Language | Stars | Health |
 | ---------- | -------- | :---: | :----: |
-| [server-connector](https://github.com/inpercima/server-connector) | Java | ⭐ 2 | 🟢 99 |
-| [davengo-results](https://github.com/inpercima/davengo-results) | TypeScript | ⭐ 0 | 🟢 99 |
-| [mc-status](https://github.com/inpercima/mc-status) | TypeScript | ⭐ 0 | 🟢 99 |
-| [rest-api](https://github.com/inpercima/rest-api) | Java | ⭐ 0 | 🟢 99 |
-| [treppenhausreinigung-creator](https://github.com/inpercima/treppenhausreinigung-creator) | JavaScript | ⭐ 0 | 🟢 99 |
+| [davengo-results](https://github.com/inpercima/davengo-results) | TypeScript | ⭐ 0 | 🟢 100 |
+| [mc-status](https://github.com/inpercima/mc-status) | TypeScript | ⭐ 0 | 🟢 100 |
+| [treppenhausreinigung-creator](https://github.com/inpercima/treppenhausreinigung-creator) | JavaScript | ⭐ 0 | 🟢 100 |
+| [mittagstisch](https://github.com/inpercima/mittagstisch) | Java | ⭐ 4 | 🟢 99 |
+| [inpercima](https://github.com/inpercima/inpercima) | JavaScript | ⭐ 0 | 🟢 98 |
 
 > For details on how dashboard values—especially health scores—are calculated, see [README_PROJECT.md](README_PROJECT.md).
