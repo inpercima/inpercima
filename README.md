@@ -1,6 +1,6 @@
 # 📊 Developer Dashboard
 
-> 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **2026-11-24**
+> 🤖 Auto-generated from GitHub API &nbsp;·&nbsp; 🗓️ Last updated: **2026-11-26**
 >
 > 🔗 [View Full Dashboard](https://inpercima.github.io/inpercima)
 
@@ -34,10 +34,10 @@
 
 | Repository | Language | Stars | Health |
 | ---------- | -------- | :---: | :----: |
+| [mittagstisch](https://github.com/inpercima/mittagstisch) | Java | ⭐ 4 | 🟢 100 |
 | [davengo-results](https://github.com/inpercima/davengo-results) | TypeScript | ⭐ 0 | 🟢 100 |
 | [mc-status](https://github.com/inpercima/mc-status) | TypeScript | ⭐ 0 | 🟢 100 |
 | [treppenhausreinigung-creator](https://github.com/inpercima/treppenhausreinigung-creator) | JavaScript | ⭐ 0 | 🟢 100 |
-| [mittagstisch](https://github.com/inpercima/mittagstisch) | Java | ⭐ 4 | 🟢 99 |
 | [inpercima](https://github.com/inpercima/inpercima) | JavaScript | ⭐ 0 | 🟢 98 |
 
 > For details on how dashboard values—especially health scores—are calculated, see [README_PROJECT.md](README_PROJECT.md).
